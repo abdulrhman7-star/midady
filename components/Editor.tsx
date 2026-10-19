@@ -6,7 +6,7 @@ import { useLanguage } from './LanguageContext';
 import { markdownToHtml, SAMPLE_MARKDOWN_PRESETS } from '@/lib/markdown-to-html';
 import { renderLatexHtml } from '@/lib/latex-to-omml';
 import { importDocxFile, htmlToMarkdown } from '@/lib/docx-import';
-import { WordFormattingOptions, ViewMode } from './WordRibbon';
+import { WordRibbon, WordFormattingOptions, ViewMode } from './WordRibbon';
 import { WordRuler } from './WordRuler';
 import { DocumentStatsModal } from './DocumentStatsModal';
 import { FindReplaceModal } from './FindReplaceModal';
@@ -102,6 +102,7 @@ export const Editor: React.FC<EditorProps> = ({
 
   // EigenPal DOCX Engine references and bytes
   const eigenEditorRef = useRef<EigenDocxEditorHandle>(null);
+  const lastPackedMarkdownRef = useRef<string>(markdown);
   const [docxBytes, setDocxBytes] = useState<Uint8Array | null>(null);
   const [isInitializingDocx, setIsInitializingDocx] = useState(false);
 
@@ -148,22 +149,8 @@ export const Editor: React.FC<EditorProps> = ({
     let active = true;
 
     async function initBytes() {
-      if (docxBase64) {
-        try {
-          const buf = base64ToBuffer(docxBase64);
-          if (active) {
-            setDocxBytes(buf);
-            if (eigenEditorRef.current) {
-              eigenEditorRef.current.loadDocument(buf);
-            }
-          }
-          return;
-        } catch (e) {
-          console.warn('Failed to parse docxBase64:', e);
-        }
-      }
-
-      if (markdown && !docxBytes) {
+      // Priority 1: If markdown prop changed, re-pack it.
+      if (markdown !== lastPackedMarkdownRef.current) {
         try {
           setIsInitializingDocx(true);
           const bytes = await markdownToDocxBytes(markdown);
@@ -172,11 +159,30 @@ export const Editor: React.FC<EditorProps> = ({
             if (eigenEditorRef.current) {
               eigenEditorRef.current.loadDocument(bytes);
             }
+            lastPackedMarkdownRef.current = markdown;
           }
         } catch (e) {
-          console.warn('Failed to pack initial markdown to docx:', e);
+          console.warn('Failed to pack markdown to docx:', e);
         } finally {
           if (active) setIsInitializingDocx(false);
+        }
+        return;
+      }
+
+      // Priority 2: Initial load from docxBase64 prop
+      if (docxBase64 && !docxBytes) {
+        try {
+          const buf = base64ToBuffer(docxBase64);
+          if (active) {
+            setDocxBytes(buf);
+            if (eigenEditorRef.current) {
+              eigenEditorRef.current.loadDocument(buf);
+            }
+            lastPackedMarkdownRef.current = markdown;
+          }
+          return;
+        } catch (e) {
+          console.warn('Failed to parse docxBase64:', e);
         }
       }
     }
@@ -186,8 +192,17 @@ export const Editor: React.FC<EditorProps> = ({
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docxBase64]);
+    }, [docxBase64, markdown, docxBytes]);
+
+  // Sync internal history with markdown prop if it changes externally
+  useEffect(() => {
+    if (markdown !== history[historyIndex]) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHistory(prev => [...prev.slice(0, historyIndex + 1), markdown]);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHistoryIndex(prev => prev + 1);
+    }
+  }, [markdown, history, historyIndex]);
 
   // Unsaved changes warning before unload
   useEffect(() => {
@@ -271,6 +286,9 @@ export const Editor: React.FC<EditorProps> = ({
     }
     performSave(true);
   }, [performSave]);
+
+  const handleSaveDoc = handleManualSave;
+  const handleClearDoc = onClearDoc;
 
   // Keyboard shortcut Ctrl+S / Cmd+S
   useEffect(() => {
@@ -569,6 +587,49 @@ export const Editor: React.FC<EditorProps> = ({
     setShowCodeDialog(false);
   };
 
+  const handleInsertTableOfContents = () => {
+    const lines = markdown.split('\n');
+    const headings: { level: number; text: string }[] = [];
+    for (const line of lines) {
+      const match = line.match(/^(#{1,6})\s+(.+)$/);
+      if (match) {
+        const level = match[1].length;
+        const text = match[2].trim().replace(/[*_`[\]()]/g, '');
+        headings.push({ level, text });
+      }
+    }
+
+    if (headings.length === 0) {
+      alert(
+        direction === 'rtl'
+          ? 'لم يتم العثور على عناوين (#) في المستند لتوليد جدول المحتويات.'
+          : 'No headings (#) found in the document to generate Table of Contents.'
+      );
+      return;
+    }
+
+    let tocMd = '\n\n## Table of Contents\n\n';
+    for (const h of headings) {
+      const indent = '  '.repeat(Math.max(0, h.level - 1));
+      const slug = h.text
+        .toLowerCase()
+        .replace(/[^a-z0-9\u0600-\u06FF\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-');
+      tocMd += `${indent}- [${h.text}](#${slug})\n`;
+    }
+    tocMd += '\n---\n\n';
+
+    updateMarkdownWithHistory(markdown + tocMd);
+    try {
+      confetti({
+        particleCount: 40,
+        spread: 60,
+        origin: { y: 0.7 },
+      });
+    } catch {}
+  };
+
   // DOCX Import File Handler (validated and fed directly into EigenPal engine)
   const handleImportDocx = async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.docx')) {
@@ -826,77 +887,44 @@ export const Editor: React.FC<EditorProps> = ({
             </div>
           </div>
 
-          {/* Right: Actions (Save, Import, Download, Print, AI Paste, Share) */}
+          {/* Right: Actions (Empty) */}
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Manual Save Button */}
-            <button
-              type="button"
-              onClick={handleManualSave}
-              disabled={saveStatus === 'saving'}
-              className="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-2xs transition active:scale-95 cursor-pointer"
-              title="Save Document (Ctrl+S)"
-            >
-              <Save className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span className="hidden md:inline">Save</span>
-            </button>
-
-            {/* Import DOCX Button */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-2xs transition active:scale-95 cursor-pointer"
-              title="Import .docx file"
-            >
-              <Upload className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span className="hidden sm:inline">Import DOCX</span>
-            </button>
-
-            {/* Download Real DOCX Button */}
-            <button
-              type="button"
-              onClick={handleDownloadRealDocx}
-              disabled={isExporting}
-              className="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
-              title="Download genuine Microsoft Word (.docx) file"
-            >
-              <FileDown className="h-3.5 w-3.5" />
-              <span>Download DOCX</span>
-            </button>
-
-            {/* Export PDF Button */}
-            <button
-              type="button"
-              onClick={handlePrintDocx}
-              className="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-2xs transition active:scale-95 cursor-pointer"
-              title="Print or Export as PDF"
-            >
-              <Printer className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
-              <span className="hidden lg:inline">PDF</span>
-            </button>
-
-            {/* Share Button */}
-            <button
-              type="button"
-              onClick={handleShareDocument}
-              className="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-2xs transition active:scale-95 cursor-pointer"
-              title="Share Document Link"
-            >
-              <Share2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
-              <span className="hidden xl:inline">{shareCopied ? 'Copied!' : 'Share'}</span>
-            </button>
-
-            {/* AI Paste Button (Ctrl+K) */}
-            <button
-              type="button"
-              onClick={onOpenInsertModal}
-              className="h-8 px-2.5 inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
-              title="Paste AI Markdown from ChatGPT or Claude (Ctrl+K)"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">AI Paste</span>
-            </button>
           </div>
         </div>
+
+        {/* Word Ribbon Toolbar */}
+        <WordRibbon
+          formatting={formatting}
+          onChangeFormatting={updateFormatting}
+          viewMode={viewMode}
+          onChangeViewMode={setViewMode}
+          onWrapSelection={(before, after) => handleExecCommand('', undefined, before, after)}
+          onApplyBlockStyle={prefix => handleExecCommand('formatBlock', prefix, prefix, '')}
+          onExecCommand={handleExecCommand}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={historyIndex > 0}
+          canRedo={historyIndex < history.length - 1}
+          onOpenInsertModal={onOpenInsertModal}
+          onOpenTableDialog={() => setShowTableDialog(true)}
+          onOpenMathDialog={() => setShowMathDialog(true)}
+          onOpenCodeDialog={() => setShowCodeDialog(true)}
+          onOpenImageModal={() => setShowImageModal(true)}
+          onOpenLinkModal={() => setShowLinkModal(true)}
+          onOpenSymbolModal={() => setShowSymbolModal(true)}
+          onOpenStatsModal={() => setShowStatsModal(true)}
+          onOpenFindReplaceModal={() => setShowFindReplaceModal(true)}
+          onOpenWatermarkModal={() => setShowWatermarkModal(true)}
+          onImportDocx={handleImportDocx}
+          onExportDocx={onExportDocx}
+          onExportPdf={onExportPdf}
+          onCopyGoogleDocs={onCopyGoogleDocs}
+          onSaveDoc={handleSaveDoc}
+          onClearDoc={handleClearDoc}
+          onLoadTemplate={handleLoadTemplate}
+          onInsertTableOfContents={handleInsertTableOfContents}
+          isExporting={isExporting}
+        />
 
 
 

@@ -53,6 +53,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  ListTree,
 } from 'lucide-react';
 
 export type RibbonTab = 'home' | 'insert' | 'layout' | 'review' | 'view' | 'file';
@@ -99,6 +100,7 @@ interface WordRibbonProps {
   onSaveDoc: () => void;
   onClearDoc: () => void;
   onLoadTemplate: (templateKey: string) => void;
+  onInsertTableOfContents: () => void;
   isExporting: boolean;
 }
 
@@ -131,6 +133,7 @@ export const WordRibbon: React.FC<WordRibbonProps> = ({
   onSaveDoc,
   onClearDoc,
   onLoadTemplate,
+  onInsertTableOfContents,
   isExporting,
 }) => {
   const { direction, t } = useLanguage();
@@ -382,332 +385,6 @@ export const WordRibbon: React.FC<WordRibbonProps> = ({
         {/* ===================== TAB: HOME ===================== */}
         {activeTab === 'home' && (
           <div className="flex items-center gap-2 text-xs flex-nowrap">
-            {/* Group 1: Font Family & Size */}
-            <div className={groupCardClass}>
-              <select
-                value={formatting.fontFamily}
-                onChange={e => onChangeFormatting({ fontFamily: e.target.value })}
-                className="h-8 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-sans text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                title="Font Family"
-              >
-                <option value="Segoe UI">Segoe UI</option>
-                <option value="Calibri">Calibri</option>
-                <option value="Arial">Arial</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Courier New">Courier New</option>
-                <option value="Traditional Arabic">Traditional Arabic</option>
-                <option value="Amiri">Amiri (Arabic)</option>
-              </select>
-
-              <select
-                value={formatting.fontSize}
-                onChange={e => onChangeFormatting({ fontSize: parseInt(e.target.value) || 11 })}
-                className="h-8 w-16 px-1.5 text-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                title="Font Size (pt)"
-              >
-                {[9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36].map(sz => (
-                  <option key={sz} value={sz}>
-                    {sz} pt
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={dividerClass} />
-
-            {/* Group 2: Basic Character Styling (B, I, U, S, Sub, Super, Clear) */}
-            <div className={groupCardClass}>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('bold', undefined, '**', '**')}
-                className={btnIconClass}
-                title="Bold (Ctrl+B)"
-              >
-                <Bold className="h-4 w-4 stroke-[2.5]" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('italic', undefined, '*', '*')}
-                className={btnIconClass}
-                title="Italic (Ctrl+I)"
-              >
-                <Italic className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('underline', undefined, '<u>', '</u>')}
-                className={btnIconClass}
-                title="Underline (Ctrl+U)"
-              >
-                <Underline className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('strikeThrough', undefined, '~~', '~~')}
-                className={btnIconClass}
-                title="Strikethrough"
-              >
-                <Strikethrough className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('subscript', undefined, '<sub>', '</sub>')}
-                className={btnIconClass}
-                title="Subscript (X₂)"
-              >
-                <Subscript className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('superscript', undefined, '<sup>', '</sup>')}
-                className={btnIconClass}
-                title="Superscript (X²)"
-              >
-                <Superscript className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('removeFormat', undefined, '', '')}
-                className={btnIconClass}
-                title="Clear Formatting"
-              >
-                <RemoveFormatting className="h-4 w-4 text-slate-500" />
-              </button>
-            </div>
-
-            <div className={dividerClass} />
-
-            {/* Group 3: Color & Highlight */}
-            <div className={groupCardClass}>
-              {/* Text Color */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onMouseDown={e => e.preventDefault()}
-                  onClick={() => {
-                    setShowColorPicker(!showColorPicker);
-                    setShowHighlightPicker(false);
-                  }}
-                  className={`${btnIconClass} w-9 px-1 gap-0.5`}
-                  title="Font Color"
-                >
-                  <Palette className="h-4 w-4 text-blue-600" />
-                  <ChevronDown className="h-2.5 w-2.5 opacity-60" />
-                </button>
-                {showColorPicker && (
-                  <div className="absolute top-9 left-0 z-50 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl grid grid-cols-4 gap-1.5 w-36">
-                    {textColors.map(c => (
-                      <button
-                        key={c.hex}
-                        type="button"
-                        onMouseDown={e => e.preventDefault()}
-                        onClick={() => handleApplyColor(c.hex)}
-                        className="h-6 w-6 rounded-full border border-slate-300 dark:border-slate-700 hover:scale-110 transition shadow-2xs cursor-pointer"
-                        style={{ backgroundColor: c.hex }}
-                        title={c.label}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Highlight */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onMouseDown={e => e.preventDefault()}
-                  onClick={() => {
-                    setShowHighlightPicker(!showHighlightPicker);
-                    setShowColorPicker(false);
-                  }}
-                  className={`${btnIconClass} w-9 px-1 gap-0.5`}
-                  title="Text Highlight Color"
-                >
-                  <Highlighter className="h-4 w-4 text-amber-500" />
-                  <ChevronDown className="h-2.5 w-2.5 opacity-60" />
-                </button>
-                {showHighlightPicker && (
-                  <div className="absolute top-9 left-0 z-50 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl grid grid-cols-3 gap-1.5 w-32">
-                    {highlightColors.map(h => (
-                      <button
-                        key={h.label}
-                        type="button"
-                        onMouseDown={e => e.preventDefault()}
-                        onClick={() => handleApplyHighlight(h.hex)}
-                        className="h-6 w-8 rounded border border-slate-300 dark:border-slate-700 hover:scale-105 transition text-[9px] flex items-center justify-center font-bold cursor-pointer"
-                        style={{ backgroundColor: h.hex }}
-                        title={h.label}
-                      >
-                        {h.label === 'None' ? '✕' : ''}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className={dividerClass} />
-
-            {/* Group 4: Paragraph & Alignment */}
-            <div className={groupCardClass}>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('justifyLeft', undefined, '<div align="left">\n\n', '\n\n</div>')}
-                className={btnIconClass}
-                title="Align Left"
-              >
-                <AlignLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('justifyCenter', undefined, '<div align="center">\n\n', '\n\n</div>')}
-                className={btnIconClass}
-                title="Align Center"
-              >
-                <AlignCenter className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('justifyRight', undefined, '<div align="right">\n\n', '\n\n</div>')}
-                className={btnIconClass}
-                title="Align Right"
-              >
-                <AlignRight className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('justifyFull', undefined, '<div align="justify">\n\n', '\n\n</div>')}
-                className={btnIconClass}
-                title="Justify"
-              >
-                <AlignJustify className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className={dividerClass} />
-
-            {/* Group 5: Lists & Indentation */}
-            <div className={groupCardClass}>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('insertUnorderedList', undefined, '- ', '')}
-                className={btnIconClass}
-                title="Bullet List"
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('insertOrderedList', undefined, '1. ', '')}
-                className={btnIconClass}
-                title="Numbered List"
-              >
-                <ListOrdered className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('insertUnorderedList', undefined, '- [ ] ', '')}
-                className={btnIconClass}
-                title="Checklist Task"
-              >
-                <CheckSquare className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('outdent', undefined, '', '')}
-                className={btnIconClass}
-                title="Decrease Indent"
-              >
-                <Outdent className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('indent', undefined, '  ', '')}
-                className={btnIconClass}
-                title="Increase Indent"
-              >
-                <Indent className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className={dividerClass} />
-
-            {/* Group 6: Word Quick Styles (Headings & Quotes) */}
-            <div className={groupCardClass}>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('formatBlock', '<p>', '', '')}
-                className={`${btnTextClass} font-normal`}
-                title="Normal Paragraph"
-              >
-                Normal
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('formatBlock', '<h1>', '# ', '')}
-                className={`${btnTextClass} font-extrabold text-blue-600 dark:text-blue-400`}
-                title="Heading 1"
-              >
-                H1
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('formatBlock', '<h2>', '## ', '')}
-                className={`${btnTextClass} font-bold text-slate-800 dark:text-slate-200`}
-                title="Heading 2"
-              >
-                H2
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('formatBlock', '<h3>', '### ', '')}
-                className={`${btnTextClass} font-semibold text-slate-700 dark:text-slate-300`}
-                title="Heading 3"
-              >
-                H3
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('formatBlock', '<blockquote>', '> ', '')}
-                className={`${btnTextClass} italic text-slate-600 dark:text-slate-400`}
-                title="Blockquote"
-              >
-                <Quote className="h-3 w-3" />
-                <span>Quote</span>
-              </button>
-              <button
-                type="button"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleFormat('', undefined, '`', '`')}
-                className={`${btnTextClass} font-mono text-purple-600 dark:text-purple-400`}
-                title="Inline Code"
-              >
-                <Code className="h-3.5 w-3.5" />
-                <span>Code</span>
-              </button>
-            </div>
           </div>
         )}
 
@@ -836,6 +513,18 @@ export const WordRibbon: React.FC<WordRibbonProps> = ({
             >
               <Split className="h-4 w-4 text-slate-500" />
               <span>Page Break</span>
+            </button>
+
+            {/* Table of Contents */}
+            <button
+              type="button"
+              onMouseDown={e => e.preventDefault()}
+              onClick={onInsertTableOfContents}
+              className="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/40 shadow-2xs cursor-pointer transition"
+              title="Automatically scan headings and insert Table of Contents"
+            >
+              <ListTree className="h-4 w-4 text-indigo-600" />
+              <span>Table of Contents</span>
             </button>
 
             <div className={dividerClass} />

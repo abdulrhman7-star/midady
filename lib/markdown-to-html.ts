@@ -331,56 +331,6 @@ function escapeHtml(unsafe: string): string {
  */
 export const SAMPLE_MARKDOWN_PRESETS = [
   {
-    id: 'scientific',
-    titleEn: 'Scientific Paper (LaTeX + Table + Code)',
-    titleAr: 'بحث علمي متقدم (معادلات + جداول + كود بايثون)',
-    markdown: `# Quantum Harmonic Oscillator & Wave Mechanics
-
-Modern quantum mechanics describes the state of a particle using the Schrödinger wave equation. Below is the time-independent formulation:
-
-$$-\\frac{\\hbar^2}{2m} \\frac{d^2\\psi}{dx^2} + V(x)\\psi(x) = E\\psi(x)$$
-
-Where $\\hbar$ represents the reduced Planck constant ($\\hbar = 1.0545718 \\times 10^{-34} \\text{ J}\\cdot\\text{s}$) and $m$ is the particle mass.
-
-### Energy Eigenvalues
-For a one-dimensional potential $V(x) = \\frac{1}{2}m\\omega^2 x^2$, the permissible discrete energy levels are:
-
-$$E_n = \\hbar\\omega\\left(n + \\frac{1}{2}\\right), \\quad n = 0, 1, 2, \\dots$$
-
-The ground state wave function is given by:
-
-$$\\psi_0(x) = \\left(\\frac{m\\omega}{\\pi\\hbar}\\right)^{1/4} e^{-\\frac{m\\omega x^2}{2\\hbar}}$$
-
-### Experimental Energy Comparison Table
-
-| Quantum State ($n$) | Theoretical $E_n$ (eV) | Measured $E_{exp}$ (eV) | Relative Error (%) |
-| :--- | :---: | :---: | :---: |
-| Ground State ($n=0$) | $0.0250$ | $0.0249$ | $-0.40\\%$ |
-| First Excited ($n=1$) | $0.0750$ | $0.0752$ | $+0.27\\%$ |
-| Second Excited ($n=2$) | $0.1250$ | $0.1248$ | $-0.16\\%$ |
-| Third Excited ($n=3$) | $0.1750$ | $0.1754$ | $+0.23\\%$ |
-
-### Numerical Simulation Code (Python)
-
-\`\`\`python
-import numpy as np
-import scipy.constants as const
-
-def harmonic_energy(n: int, omega: float) -> float:
-    """Calculates quantum harmonic oscillator energy level in Joules."""
-    hbar = const.hbar
-    return hbar * omega * (n + 0.5)
-
-# Calculate first 5 states for omega = 1.0e14 rad/s
-omega_val = 1.0e14
-energies = [harmonic_energy(n, omega_val) for n in range(5)]
-for idx, E in enumerate(energies):
-    print(f"E_{idx} = {E * 6.242e18:.4f} eV")
-\`\`\`
-
-> **Key Observation:** The zero-point energy $E_0 = \\frac{1}{2}\\hbar\\omega$ is a pure quantum mechanical phenomenon with no classical analog.`,
-  },
-  {
     id: 'financial',
     titleEn: 'Business & Tax Report (Saudi VAT SAR Table)',
     titleAr: 'تقرير مالي وضريبي (جدول ضريبة القيمة المضافة SAR)',
