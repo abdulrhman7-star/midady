@@ -1,0 +1,289 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --paper-bg: #ffffff;
+    --paper-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark {
+    --paper-bg: #0f172a;
+    --paper-shadow: 0 4px 25px -2px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Universal Fluid Box-Sizing & Viewport Reset */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  body {
+    overflow-x: hidden;
+    width: 100%;
+    min-height: 100dvh;
+    font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+  }
+
+  /* Responsive Media Elements: images, videos, svgs always fit their container */
+  img, svg, video, canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Word break rules for code, math, and dense text */
+  p, h1, h2, h3, h4, h5, h6, span {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+}
+
+/* ========================================================
+   RESPONSIVE CSS ARCHITECTURE (MOBILE-FIRST)
+   ======================================================== */
+
+/* 1. Base Styles (Phones & Small Devices < 640px) */
+.paper-canvas {
+  background-color: var(--paper-bg);
+  box-shadow: var(--paper-shadow);
+  width: 100%;
+  max-width: 100%;
+  min-height: clamp(380px, 60vh, 1050px);
+  box-sizing: border-box;
+}
+
+/* Fluid Tables with Smooth Horizontal Scroll */
+.editor-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  margin: 1rem 0;
+  border: 1px solid #cbd5e1;
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  display: table;
+}
+
+.table-responsive-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+}
+
+.editor-table th, 
+.editor-table td {
+  border: 1px solid #cbd5e1;
+  padding: clamp(0.35rem, 1vw, 0.75rem);
+  text-align: left;
+}
+
+[dir="rtl"] .editor-table th,
+[dir="rtl"] .editor-table td {
+  text-align: right;
+}
+
+.editor-table th {
+  background-color: #f1f5f9;
+  font-weight: 600;
+}
+
+.dark .editor-table {
+  border-color: #334155;
+}
+
+.dark .editor-table th,
+.dark .editor-table td {
+  border-color: #334155;
+}
+
+.dark .editor-table th {
+  background-color: #1e293b;
+}
+
+/* Fluid Code Blocks */
+.editor-code-block {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  border-radius: 0.5rem;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(0.75rem, 1.6vw, 0.875rem);
+  line-height: 1.6;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+}
+
+/* Fluid KaTeX Display */
+.katex-display {
+  margin: 0.875rem 0 !important;
+  padding: clamp(0.5rem, 1.5vw, 0.875rem) !important;
+  background-color: rgba(241, 245, 249, 0.6);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: clamp(0.85rem, 2vw, 1.05rem) !important;
+}
+
+.dark .katex-display {
+  background-color: rgba(30, 41, 59, 0.6);
+  border-color: rgba(51, 65, 85, 0.6);
+}
+
+/* Prose Image Handling */
+.prose img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 0.5rem;
+}
+
+/* Touch Targets: minimum 44px on mobile devices */
+@media (max-width: 639px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ========================================================
+   2. Media Query: Tablets (sm: 640px and up)
+   ======================================================== */
+@media (min-width: 640px) {
+  .paper-canvas {
+    min-height: clamp(550px, 70vh, 1050px);
+  }
+
+  .editor-table {
+    margin: 1.25rem 0;
+  }
+}
+
+/* ========================================================
+   3. Media Query: Tablets Landscape & Laptops (md: 768px and up)
+   ======================================================== */
+@media (min-width: 768px) {
+  .paper-canvas {
+    min-height: clamp(700px, 80vh, 1050px);
+  }
+}
+
+/* ========================================================
+   4. Media Query: Desktop Displays (lg: 1024px and up)
+   ======================================================== */
+@media (min-width: 1024px) {
+  .paper-canvas {
+    min-height: 840px;
+  }
+}
+
+/* ========================================================
+   5. Media Query: Ultra-Wide Screens (2xl: 1536px and up)
+   ======================================================== */
+@media (min-width: 1536px) {
+  .paper-canvas {
+    min-height: 960px;
+  }
+}
+
+/* ========================================================
+   PRINT STYLES (PDF & Paper Output)
+   ======================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  .no-print, header, nav, .toolbar-container, .export-bar-container, .modal-backdrop, button, .action-floating {
+    display: none !important;
+  }
+
+  .print-area {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  @page {
+    margin: 20mm 15mm 20mm 15mm;
+    size: A4 portrait;
+  }
+}
+
+/* ========================================================
+   COHESIVE EIGENPAL DOCX EDITOR & TOOLBAR STYLES
+   ======================================================== */
+.docx-editor {
+  --doc-border: #e2e8f0;
+  --doc-surface: #ffffff;
+  --doc-bg-subtle: #f8fafc;
+  --doc-bg-hover: #f1f5f9;
+  --doc-toggle-active-bg: #e0e7ff;
+  --doc-toggle-active-fg: #4338ca;
+  --doc-text: #0f172a;
+}
+
+.dark .docx-editor {
+  --doc-border: #1e293b;
+  --doc-surface: #0f172a;
+  --doc-bg-subtle: #090d16;
+  --doc-bg-hover: #1e293b;
+  --doc-toggle-active-bg: #312e81;
+  --doc-toggle-active-fg: #c7d2fe;
+  --doc-text: #f8fafc;
+}
+
+/* Visually distinct toolbar from the document canvas */
+.docx-editor-shell__toolbar {
+  border-bottom: 1px solid var(--doc-border) !important;
+  background-color: var(--doc-surface) !important;
+  padding: 4px 12px !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+.docx-editor-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 2px 0 !important;
+}
+
+.docx-editor-toolbar__group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  background-color: var(--doc-bg-subtle) !important;
+  border: 1px solid var(--doc-border) !important;
+  border-radius: 8px !important;
+  padding: 2px 4px !important;
+}
+
+.docx-editor-toolbar-toggle,
+.docx-editor-toolbar button {
+  border-radius: 6px !important;
+  transition: all 0.15s ease-in-out !important;
+  padding: 4px 6px !important;
+}
+
+.docx-editor-toolbar-toggle:hover,
+.docx-editor-toolbar button:hover {
+  background-color: var(--doc-bg-hover) !important;
+}
+
+/* Content canvas backdrop */
+.docx-editor-viewport {
+  background-color: #f1f5f9 !important;
+  padding: 1.5rem !important;
+}
+
+.dark .docx-editor-viewport {
+  background-color: #020617 !important;
+}
