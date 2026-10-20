@@ -331,39 +331,6 @@ function escapeHtml(unsafe: string): string {
  */
 export const SAMPLE_MARKDOWN_PRESETS = [
   {
-    id: 'financial',
-    titleEn: 'Business & Tax Report (Saudi VAT SAR Table)',
-    titleAr: 'تقرير مالي وضريبي (جدول ضريبة القيمة المضافة SAR)',
-    markdown: `# Q3 Corporate Revenue & Saudi VAT Compliance Report
-
-**Company Name:** Al-Wafaa Technologies Ltd.  
-**Tax Registration Number (VAT):** 300123456700003  
-**Currency:** Saudi Riyal (SAR)
-
-This quarterly financial summary complies with standard corporate governance and ZATCA tax invoice filing requirements.
-
-### Revenue Breakdown by Business Unit
-
-| Service Division | Taxable Base (SAR) | VAT Rate (15%) | Total Inclusive (SAR) | Compliance Status |
-| :--- | :---: | :---: | :---: | :---: |
-| Enterprise Cloud Hosting | 450,000.00 | 67,500.00 | 517,500.00 | Approved |
-| ERP Software Implementation | 820,000.00 | 123,000.00 | 943,000.00 | Approved |
-| Maintenance & Support SLA | 185,000.00 | 27,750.00 | 212,750.00 | Approved |
-| Hardware & Point of Sale | 120,000.00 | 18,000.00 | 138,000.00 | Approved |
-| **Total Quarterly Figures** | **1,575,000.00** | **236,250.00** | **1,811,250.00** | **Fully Reconciled** |
-
-### Key Performance Indices
-The Net Profit Margin formula applied across all branches:
-
-$$\\text{Net Margin} = \\frac{\\text{Gross Revenue} - \\text{COGS} - \\text{OPEX}}{\\text{Gross Revenue}} \\times 100\\%$$
-
-- **Gross Margin:** $38.4\\%$
-- **Operating Margin:** $22.1\\%$
-- **Days Sales Outstanding (DSO):** $34.2 \\text{ days}$
-
-> **Audit Recommendation:** Maintain electronic archives of all UBL 2.1 XML invoices and cryptographic stamps for a statutory period of 5 years.`,
-  },
-  {
     id: 'deeplearning',
     titleEn: 'AI & Neural Networks Architecture',
     titleAr: 'توثيق معمارية الذكاء الاصطناعي وخوارزميات التعلم العميق',
