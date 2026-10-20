@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useLanguage } from './LanguageContext';
 import { markdownToHtml, SAMPLE_MARKDOWN_PRESETS } from '@/lib/markdown-to-html';
 import { renderLatexHtml } from '@/lib/latex-to-omml';
@@ -14,7 +15,7 @@ import { InsertImageModal } from './InsertImageModal';
 import { InsertLinkModal } from './InsertLinkModal';
 import { SymbolPaletteModal } from './SymbolPaletteModal';
 import { WatermarkModal } from './WatermarkModal';
-import { EigenDocxEditor, EigenDocxEditorHandle } from './EigenDocxEditor';
+import type { EigenDocxEditorHandle } from './EigenDocxEditor';
 import { markdownToDocxBytes, downloadDocxBuffer } from '@/lib/docx-export';
 import { bufferToBase64, base64ToBuffer, saveUserDocument } from '@/lib/supabase';
 import { useSession, deductCredit } from '@/lib/guest-session';
@@ -46,6 +47,27 @@ import {
   Redo2,
   ExternalLink,
 } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// CRITICAL: Load the DOCX editor strictly on the client.
+// @docx-editor.dev/core reads DOM APIs and uses top-level await, so it MUST
+// never be evaluated during SSR / static prerendering. `ssr: false` keeps the
+// whole module (and its dependency graph) out of the server bundle.
+// ---------------------------------------------------------------------------
+const EigenDocxEditor = dynamic(
+  () => import('./EigenDocxEditor').then(mod => mod.EigenDocxEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex-1 w-full h-full flex flex-col items-center justify-center min-h-[720px] bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-2" />
+        <span className="text-xs font-semibold text-slate-500">
+          Loading Word Engine...
+        </span>
+      </div>
+    ),
+  }
+) as typeof import('./EigenDocxEditor').EigenDocxEditor;
 
 interface EditorProps {
   markdown: string;
@@ -192,7 +214,7 @@ export const Editor: React.FC<EditorProps> = ({
     return () => {
       active = false;
     };
-    }, [docxBase64, markdown, docxBytes]);
+  }, [docxBase64, markdown, docxBytes]);
 
   // Sync internal history with markdown prop if it changes externally
   useEffect(() => {
@@ -557,8 +579,6 @@ export const Editor: React.FC<EditorProps> = ({
     setFormatting(prev => ({ ...prev, ...opts }));
   };
 
-
-
   const handleInsertTable = () => {
     let mdTable = '\n\n|';
     for (let c = 1; c <= tableColsCount; c++) mdTable += ` Column ${c} |`;
@@ -699,18 +719,29 @@ export const Editor: React.FC<EditorProps> = ({
     const preset =
       SAMPLE_MARKDOWN_PRESETS.find(p => p.id === key) ||
       (key === 'saudi_vat' ? SAMPLE_MARKDOWN_PRESETS[1] : SAMPLE_MARKDOWN_PRESETS[0]);
-    if (preset) {
-      updateMarkdownWithHistory(preset.markdown);
-      onChangeTitle(direction === 'rtl' ? preset.titleAr : preset.titleEn);
-      try {
-        const bytes = await markdownToDocxBytes(preset.markdown);
-        setDocxBytes(bytes);
-        if (eigenEditorRef.current) {
-          eigenEditorRef.current.loadDocument(bytes);
-        }
-      } catch {}
-      scheduleAutosave();
+
+    if (!preset) {
+      // Guard against an empty SAMPLE_MARKDOWN_PRESETS array so we never
+      // dereference `preset.markdown` on `undefined`.
+      setImportNotification(
+        direction === 'rtl'
+          ? 'لا توجد قوالب جاهزة متاحة حالياً.'
+          : 'No sample templates are currently available.'
+      );
+      setTimeout(() => setImportNotification(null), 4000);
+      return;
     }
+
+    updateMarkdownWithHistory(preset.markdown);
+    onChangeTitle(direction === 'rtl' ? preset.titleAr : preset.titleEn);
+    try {
+      const bytes = await markdownToDocxBytes(preset.markdown);
+      setDocxBytes(bytes);
+      if (eigenEditorRef.current) {
+        eigenEditorRef.current.loadDocument(bytes);
+      }
+    } catch {}
+    scheduleAutosave();
   };
 
   // Word & Page Metrics
@@ -925,8 +956,6 @@ export const Editor: React.FC<EditorProps> = ({
           onInsertTableOfContents={handleInsertTableOfContents}
           isExporting={isExporting}
         />
-
-
 
         {/* Visual Ruler (Word-style) */}
         {formatting.showRuler && (viewMode === 'print' || viewMode === 'web') && (
