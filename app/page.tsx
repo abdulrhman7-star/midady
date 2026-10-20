@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import dynamic from 'next/dynamic';
 import { LanguageProvider, useLanguage } from '@/components/LanguageContext';
 import { Header } from '@/components/Header';
 import { ExportBar } from '@/components/ExportBar';
-import { Editor } from '@/components/Editor';
 import { Footer } from '@/components/Footer';
 import { InsertContentModal } from '@/components/InsertContentModal';
 import { AuthModal } from '@/components/AuthModals';
@@ -25,9 +25,34 @@ import { useTheme } from '@/lib/theme';
 import { SAMPLE_MARKDOWN_PRESETS, markdownToHtml } from '@/lib/markdown-to-html';
 import { SavedDocument } from '@/types';
 
+// ---------------------------------------------------------------------------
+// Load the Editor strictly on the client. This keeps @docx-editor.dev/core
+// (which uses top-level await and DOM APIs) out of the server bundle and
+// silences the "topLevelAwait" warnings during `next build`.
+// ---------------------------------------------------------------------------
+const Editor = dynamic(
+  () => import('@/components/Editor').then(m => m.Editor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[600px] text-slate-400 text-sm font-semibold">
+        Loading editor…
+      </div>
+    ),
+  }
+);
+
 type InitialDocData = {
   markdown: string;
   title: string;
+};
+
+// Safe fallback used when SAMPLE_MARKDOWN_PRESETS is empty.
+// This guarantees the useState initializer never dereferences undefined.
+const FALLBACK_DOC: InitialDocData = {
+  markdown:
+    '# Untitled Document\n\nStart typing or paste your AI-generated markdown here (Ctrl+K).\n',
+  title: 'Untitled Document',
 };
 
 function PlaygroundApp() {
@@ -37,9 +62,21 @@ function PlaygroundApp() {
   const [isDark, toggleTheme] = useTheme();
 
   // Initial document state (preloaded with rich preset so playground is immediately stunning)
-  // Load external template if selected from /templates (lazily in useState initializer to avoid effect setState)
-  const defaultPreset = SAMPLE_MARKDOWN_PRESETS[0];
+  const defaultPreset = SAMPLE_MARKDOWN_PRESETS[0]; // may be undefined
   const [initialData] = useState<InitialDocData>(() => {
+    // SSR-safe default: use the preset if available, otherwise the fallback.
+    const safeDefault: InitialDocData = defaultPreset
+      ? {
+          markdown: defaultPreset.markdown,
+          title: defaultPreset.titleEn || FALLBACK_DOC.title,
+        }
+      : FALLBACK_DOC;
+
+    // localStorage is only available in the browser; guard with typeof check.
+    if (typeof window === 'undefined') {
+      return safeDefault;
+    }
+
     try {
       const raw = localStorage.getItem('midaddExternalTemplate');
       if (raw) {
@@ -49,15 +86,12 @@ function PlaygroundApp() {
         };
         localStorage.removeItem('midaddExternalTemplate');
         return {
-          markdown: parsed.markdown || defaultPreset.markdown,
-          title: parsed.title || 'Quantum Wave Mechanics Research',
+          markdown: parsed.markdown || safeDefault.markdown,
+          title: parsed.title || safeDefault.title,
         };
       }
     } catch {}
-    return {
-      markdown: defaultPreset.markdown,
-      title: 'Quantum Wave Mechanics Research',
-    };
+    return safeDefault;
   });
 
   const [markdown, setMarkdown] = useState<string>(initialData.markdown);
