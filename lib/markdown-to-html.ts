@@ -329,10 +329,11 @@ function escapeHtml(unsafe: string): string {
 /**
  * Built-in Preset Markdown Templates
  */
-export const SAMPLE_MARKDOWN_PRESETS = [
-  {
-   
-\`\`\`
-`,
-  }
-];
+export interface MarkdownPreset {
+  id: string;
+  titleEn: string;
+  titleAr: string;
+  markdown: string;
+}
+
+export const SAMPLE_MARKDOWN_PRESETS: MarkdownPreset[] = [];
