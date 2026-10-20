@@ -21,7 +21,7 @@ export interface EigenDocxEditorHandle {
   focus: () => void;
 }
 
-interface EigenDocxEditorProps {
+export interface EigenDocxEditorProps {
   initialBytes?: Uint8Array | ArrayBuffer | null;
   documentTitle: string;
   isDark?: boolean;
@@ -30,7 +30,9 @@ interface EigenDocxEditorProps {
   className?: string;
 }
 
-// Dynamically load DocxEditor client-side to prevent SSR window/document access
+// The inner DocxEditor is also loaded client-side only, so its module is never
+// evaluated on the server. Combined with the outer `dynamic(..., { ssr: false })`
+// in Editor.tsx, no DOCX-Editor code ever runs during SSR / prerendering.
 const DynamicDocxEditor = dynamic(
   () => import('@docx-editor.dev/react').then(mod => mod.DocxEditor),
   {
