@@ -331,49 +331,7 @@ function escapeHtml(unsafe: string): string {
  */
 export const SAMPLE_MARKDOWN_PRESETS = [
   {
-    id: 'deeplearning',
-    titleEn: 'AI & Neural Networks Architecture',
-    titleAr: 'توثيق معمارية الذكاء الاصطناعي وخوارزميات التعلم العميق',
-    markdown: `# Transformer Attention Mechanism & Loss Formulation
-
-The core innovation of transformer architecture is the Scaled Dot-Product Attention:
-
-$$\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right)V$$
-
-Where $Q, K, V$ denote Query, Key, and Value matrices respectively, and $d_k$ is the dimensionality of queries and keys.
-
-### Multi-Head Attention
-Instead of performing a single attention function, Multi-Head Attention projects $Q, K, V$ linearly $h$ times:
-
-$$\\text{MultiHead}(Q, K, V) = \\text{Concat}(\\text{head}_1, \\dots, \\text{head}_h)W^O$$
-
-$$\\text{where } \\text{head}_i = \\text{Attention}(QW_i^Q, KW_i^K, VW_i^V)$$
-
-### Layer Benchmark & Parameter Count
-
-| Model Layer | Input Dim ($d_{in}$) | Output Dim ($d_{out}$) | Parameters | Activation |
-| :--- | :---: | :---: | :---: | :---: |
-| Embedding Layer | $32,000$ | $4,096$ | $131,072,000$ | Linear |
-| Multi-Head Attention | $4,096$ | $4,096$ | $67,108,864$ | Softmax |
-| Feed-Forward Layer 1 | $4,096$ | $16,384$ | $67,108,864$ | SwiGLU |
-| Feed-Forward Layer 2 | $16,384$ | $4,096$ | $67,108,864$ | Linear |
-
-\`\`\`python
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-class ScaledDotProductAttention(nn.Module):
-    def __init__(self, temperature: float):
-        super().__init__()
-        self.temperature = temperature
-
-    def forward(self, q, k, v, mask=None):
-        scores = torch.matmul(q, k.transpose(-2, -1)) / self.temperature
-        if mask is not None:
-            scores = scores.masked_fill(mask == 0, -1e9)
-        attn = F.softmax(scores, dim=-1)
-        return torch.matmul(attn, v), attn
+   
 \`\`\`
 `,
   }
