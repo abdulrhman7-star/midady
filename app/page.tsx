@@ -22,13 +22,13 @@ import {
   deleteDocument,
 } from '@/lib/guest-session';
 import { useTheme } from '@/lib/theme';
-import { SAMPLE_MARKDOWN_PRESETS, markdownToHtml } from '@/lib/markdown-to-html';
+import { markdownToHtml } from '@/lib/markdown-to-html';
 import { SavedDocument } from '@/types';
 
 // ---------------------------------------------------------------------------
-// Load the Editor strictly on the client. This keeps @docx-editor.dev/core
-// (which uses top-level await and DOM APIs) out of the server bundle and
-// silences the "topLevelAwait" warnings during `next build`.
+// تحميل المحرر على العميل فقط (ssr: false)
+// هذا يمنع @docx-editor.dev/core من العمل على السيرفر ويلغي تحذيرات
+// topLevelAwait أثناء next build.
 // ---------------------------------------------------------------------------
 const Editor = dynamic(
   () => import('@/components/Editor').then(m => m.Editor),
@@ -47,11 +47,9 @@ type InitialDocData = {
   title: string;
 };
 
-// Safe fallback used when SAMPLE_MARKDOWN_PRESETS is empty.
-// This guarantees the useState initializer never dereferences undefined.
-const FALLBACK_DOC: InitialDocData = {
-  markdown:
-    '# Untitled Document\n\nStart typing or paste your AI-generated markdown here (Ctrl+K).\n',
+// المستند يبدأ فاضي تماماً
+const EMPTY_DOC: InitialDocData = {
+  markdown: '',
   title: 'Untitled Document',
 };
 
@@ -61,20 +59,12 @@ function PlaygroundApp() {
   const savedDocs = useSavedDocsList();
   const [isDark, toggleTheme] = useTheme();
 
-  // Initial document state (preloaded with rich preset so playground is immediately stunning)
-  const defaultPreset = SAMPLE_MARKDOWN_PRESETS[0]; // may be undefined
+  // الحالة الأولية: مستند فاضي دائماً، إلا إذا كان هناك قالب خارجي
+  // محفوظ في localStorage (يأتي من صفحة /templates عند اختيار قالب).
   const [initialData] = useState<InitialDocData>(() => {
-    // SSR-safe default: use the preset if available, otherwise the fallback.
-    const safeDefault: InitialDocData = defaultPreset
-      ? {
-          markdown: defaultPreset.markdown,
-          title: defaultPreset.titleEn || FALLBACK_DOC.title,
-        }
-      : FALLBACK_DOC;
-
-    // localStorage is only available in the browser; guard with typeof check.
+    // SSR-safe: على السيرفر نرجع المستند الفاضي
     if (typeof window === 'undefined') {
-      return safeDefault;
+      return EMPTY_DOC;
     }
 
     try {
@@ -86,12 +76,13 @@ function PlaygroundApp() {
         };
         localStorage.removeItem('midaddExternalTemplate');
         return {
-          markdown: parsed.markdown || safeDefault.markdown,
-          title: parsed.title || safeDefault.title,
+          markdown: parsed.markdown ?? '',
+          title: parsed.title ?? 'Untitled Document',
         };
       }
     } catch {}
-    return safeDefault;
+
+    return EMPTY_DOC;
   });
 
   const [markdown, setMarkdown] = useState<string>(initialData.markdown);
@@ -106,7 +97,7 @@ function PlaygroundApp() {
   const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Global keyboard shortcuts (Ctrl+K or Cmd+K to open insert modal)
+  // اختصارات لوحة المفاتيح (Ctrl+K / Cmd+K لفتح نافذة الإدراج)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -118,21 +109,20 @@ function PlaygroundApp() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Insert markdown from modal
+  // إدراج محتوى Markdown من النافذة
   const handleInsertMarkdown = (newMd: string, replace: boolean) => {
     if (replace) {
       setMarkdown(newMd);
-      // Auto-extract first heading as title
       const headingMatch = newMd.match(/^#\s+(.+)$/m);
       if (headingMatch && headingMatch[1]) {
         setDocumentTitle(headingMatch[1].trim());
       }
     } else {
-      setMarkdown((prev: string) => prev + '\n\n' + newMd);
+      setMarkdown((prev: string) => (prev ? prev + '\n\n' + newMd : newMd));
     }
   };
 
-  // Export DOCX with credit check and native equations
+  // تصدير DOCX مع فحص الأرصدة
   const handleExportDocx = async () => {
     if (session.credits <= 0) {
       setIsOutOfCreditsOpen(true);
@@ -147,10 +137,8 @@ function PlaygroundApp() {
       )}.docx`;
       await exportToDocx(markdown, filename);
 
-      // Deduct credit
       deductCredit();
 
-      // Celebrate with confetti
       try {
         confetti({
           particleCount: 50,
@@ -165,7 +153,7 @@ function PlaygroundApp() {
     }
   };
 
-  // Export PDF (clean print view)
+  // تصدير PDF عبر الطباعة
   const handleExportPdf = () => {
     if (session.credits <= 0) {
       setIsOutOfCreditsOpen(true);
@@ -176,28 +164,29 @@ function PlaygroundApp() {
     window.print();
   };
 
-  // Copy for Google Docs
+  // نسخ إلى Google Docs
   const handleCopyGoogleDocs = async (): Promise<boolean> => {
     return await copyForGoogleDocs(markdown, true);
   };
 
-  // Save current document
+  // حفظ المستند الحالي
   const handleSaveDoc = () => {
     const html = markdownToHtml(markdown);
     const saved = saveDocument(documentTitle, markdown, html, currentDocId);
     setCurrentDocId(saved.id);
   };
 
-  // Clear document
+  // تفريغ المستند
   const handleClearDoc = () => {
     if (window.confirm(t.clearConfirm)) {
       setMarkdown('');
       setDocumentTitle('Untitled Document');
       setCurrentDocId(undefined);
+      setDocxBase64(undefined);
     }
   };
 
-  // Load saved document into editor
+  // تحميل مستند محفوظ
   const handleSelectSavedDoc = (doc: SavedDocument) => {
     setMarkdown(doc.markdown);
     setDocumentTitle(doc.title);
@@ -205,7 +194,7 @@ function PlaygroundApp() {
     setDocxBase64(doc.docxBase64);
   };
 
-  // Delete saved doc
+  // حذف مستند محفوظ
   const handleDeleteSavedDoc = (id: string) => {
     if (window.confirm(t.deleteConfirm)) {
       deleteDocument(id);
@@ -216,7 +205,7 @@ function PlaygroundApp() {
     }
   };
 
-  // Create new blank document
+  // مستند جديد فاضي
   const handleNewDoc = () => {
     setMarkdown('');
     setDocumentTitle('Untitled Document');
@@ -224,7 +213,7 @@ function PlaygroundApp() {
     setDocxBase64(undefined);
   };
 
-  // Convert account / Upgrade
+  // ترقية الحساب
   const handleRegister = (email: string, name: string) => {
     convertGuestToFullAccount(email, name);
     try {
@@ -236,7 +225,7 @@ function PlaygroundApp() {
     } catch {}
   };
 
-  // Logout
+  // تسجيل الخروج
   const handleLogout = () => {
     logoutAccount();
   };
@@ -254,7 +243,7 @@ function PlaygroundApp() {
         onToggleTheme={toggleTheme}
       />
 
-      {/* Export Bar with Red Action Button */}
+      {/* Export Bar */}
       <ExportBar
         onOpenInsertModal={() => setIsInsertModalOpen(true)}
         onExportDocx={handleExportDocx}
@@ -265,7 +254,7 @@ function PlaygroundApp() {
         isExporting={isExporting}
       />
 
-      {/* Main Interactive Editor Canvas */}
+      {/* Editor Canvas */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4">
         <Editor
           markdown={markdown}
@@ -291,7 +280,7 @@ function PlaygroundApp() {
         onInsertMarkdown={handleInsertMarkdown}
       />
 
-      {/* User Upgrade & Credit Top-up Modal */}
+      {/* Auth / Out of Credits Modal */}
       <AuthModal
         isOpen={isAuthModalOpen || isOutOfCreditsOpen}
         onClose={() => {
@@ -313,7 +302,6 @@ function PlaygroundApp() {
         onNewDoc={handleNewDoc}
       />
 
-      {/* Comprehensive Site Footer */}
       <Footer />
     </div>
   );
