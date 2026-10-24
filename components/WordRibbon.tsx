@@ -11,7 +11,6 @@ import {
   Sparkles,
   Search,
   Replace,
-  FolderOpen,
   Upload,
   Bold,
   Italic,
@@ -233,7 +232,7 @@ export const WordRibbon: React.FC<WordRibbonProps> = ({
   const dividerClass = 'h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 shrink-0';
 
   return (
-    <div className="no-print w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs select-none transition-colors">
+    <div className={`no-print w-full bg-white dark:bg-slate-900 select-none transition-colors ${activeTab === 'home' ? 'hidden' : 'border-b border-slate-200 dark:border-slate-800 shadow-xs'}`}>
       {/* Hidden DOCX File Input */}
       <input
         ref={fileInputRef}
@@ -243,150 +242,9 @@ export const WordRibbon: React.FC<WordRibbonProps> = ({
         className="hidden"
       />
 
-      {/* Top Ribbon Tabs Header (Selector 2) */}
-      <div className="flex items-center px-3 sm:px-6 border-b border-slate-200/90 dark:border-slate-800 bg-gradient-to-b from-slate-100 to-slate-100/70 dark:from-slate-950 dark:to-slate-900 gap-1 overflow-x-auto text-xs font-semibold text-slate-700 dark:text-slate-300 py-1.5 shadow-2xs">
-        {/* Word File Tab (Iconic Blue) */}
-        <button
-          type="button"
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => setActiveTab('file')}
-          className={`px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer font-bold ${
-            activeTab === 'file'
-              ? 'bg-[#185abd] text-white shadow-xs ring-1 ring-blue-700'
-              : 'bg-[#185abd]/90 hover:bg-[#185abd] text-white shadow-2xs'
-          }`}
-          title="File Operations & DOCX Export"
-        >
-          <FolderOpen className="h-3.5 w-3.5" />
-          <span>File</span>
-        </button>
-
-        {/* Home Tab */}
-        <button
-          type="button"
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => setActiveTab('home')}
-          className={`px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-            activeTab === 'home'
-              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold border border-slate-200 dark:border-slate-700 border-b-white dark:border-b-slate-900 shadow-2xs'
-              : 'hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-        >
-          <span>Home</span>
-        </button>
-
-        {/* Insert Tab */}
-        <button
-          type="button"
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => setActiveTab('insert')}
-          className={`px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-            activeTab === 'insert'
-              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold border border-slate-200 dark:border-slate-700 border-b-white dark:border-b-slate-900 shadow-2xs'
-              : 'hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-        >
-          <span>Insert</span>
-        </button>
-
-        {/* Layout Tab */}
-        <button
-          type="button"
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => setActiveTab('layout')}
-          className={`px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-            activeTab === 'layout'
-              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold border border-slate-200 dark:border-slate-700 border-b-white dark:border-b-slate-900 shadow-2xs'
-              : 'hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-        >
-          <span>Layout</span>
-        </button>
-
-        {/* Review Tab */}
-        <button
-          type="button"
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => setActiveTab('review')}
-          className={`px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-            activeTab === 'review'
-              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold border border-slate-200 dark:border-slate-700 border-b-white dark:border-b-slate-900 shadow-2xs'
-              : 'hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-        >
-          <span>Review</span>
-        </button>
-
-        {/* View Tab */}
-        <button
-          type="button"
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => setActiveTab('view')}
-          className={`px-3.5 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
-            activeTab === 'view'
-              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold border border-slate-200 dark:border-slate-700 border-b-white dark:border-b-slate-900 shadow-2xs'
-              : 'hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-        >
-          <span>View</span>
-        </button>
-
-        {/* Right side shortcuts: Undo/Redo & Quick AI Insert */}
-        <div className="ml-auto flex items-center gap-1.5 py-0.5">
-          {onUndo && (
-            <button
-              type="button"
-              onMouseDown={e => e.preventDefault()}
-              onClick={onUndo}
-              disabled={!canUndo}
-              className={`h-7 w-7 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 transition ${
-                canUndo
-                  ? 'hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-2xs active:scale-95'
-                  : 'opacity-40 cursor-not-allowed text-slate-400'
-              }`}
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo2 className="h-3.5 w-3.5" />
-            </button>
-          )}
-
-          {onRedo && (
-            <button
-              type="button"
-              onMouseDown={e => e.preventDefault()}
-              onClick={onRedo}
-              disabled={!canRedo}
-              className={`h-7 w-7 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 transition ${
-                canRedo
-                  ? 'hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-2xs active:scale-95'
-                  : 'opacity-40 cursor-not-allowed text-slate-400'
-              }`}
-              title="Redo (Ctrl+Y)"
-            >
-              <Redo2 className="h-3.5 w-3.5" />
-            </button>
-          )}
-
-          <button
-            type="button"
-            onMouseDown={e => e.preventDefault()}
-            onClick={onOpenInsertModal}
-            className="inline-flex items-center space-x-1 rtl:space-x-reverse px-2.5 py-1 rounded-md bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold text-xs shadow-xs active:scale-95 transition"
-            title="Paste AI Markdown (Ctrl+K)"
-          >
-            <Sparkles className="h-3 w-3" />
-            <span>AI Paste</span>
-          </button>
-        </div>
-      </div>
-
       {/* Tab Action Strip (Selector 3) */}
-      <div className="px-3 sm:px-6 py-2.5 overflow-x-auto min-h-[62px] flex items-center gap-2 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 shadow-2xs transition-colors">
-        {/* ===================== TAB: HOME ===================== */}
-        {activeTab === 'home' && (
-          <div className="flex items-center gap-2 text-xs flex-nowrap">
-          </div>
-        )}
+      {activeTab !== 'home' && (
+        <div className="px-3 sm:px-6 py-2.5 overflow-x-auto min-h-[62px] flex items-center gap-2 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80 shadow-2xs transition-colors">
 
         {/* ===================== TAB: INSERT ===================== */}
         {activeTab === 'insert' && (
@@ -869,6 +727,7 @@ export const WordRibbon: React.FC<WordRibbonProps> = ({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

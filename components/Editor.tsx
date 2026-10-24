@@ -171,8 +171,8 @@ export const Editor: React.FC<EditorProps> = ({
     let active = true;
 
     async function initBytes() {
-      // Priority 1: If markdown prop changed, re-pack it.
-      if (markdown !== lastPackedMarkdownRef.current) {
+      // Priority 1: If markdown prop changed or docxBytes is not yet initialized for non-empty markdown, re-pack it.
+      if (markdown !== lastPackedMarkdownRef.current || (!docxBytes && markdown)) {
         try {
           setIsInitializingDocx(true);
           const bytes = await markdownToDocxBytes(markdown);

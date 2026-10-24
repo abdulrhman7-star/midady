@@ -19,8 +19,27 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  transpilePackages: ['motion'],
+  serverExternalPackages: [],
+  transpilePackages: [
+    'motion',
+    '@docx-editor.dev/core',
+    '@docx-editor.dev/react',
+    '@docx-editor.dev/fonts',
+    '@docx-editor.dev/i18n',
+    'harfbuzzjs',
+  ],
+
   webpack: (config, {dev, isServer}) => {
+    config.experiments = {
+      ...config.experiments,
+      topLevelAwait: true,
+    };
+    if (config.output) {
+      config.output.environment = {
+        ...config.output.environment,
+        asyncFunction: true,
+      };
+    }
     if (!isServer) {
       config.resolve = config.resolve || {};
       config.resolve.fallback = {

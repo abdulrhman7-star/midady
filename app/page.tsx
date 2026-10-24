@@ -24,6 +24,7 @@ import {
 import { useTheme } from '@/lib/theme';
 import { markdownToHtml } from '@/lib/markdown-to-html';
 import { SavedDocument } from '@/types';
+import { Sparkles, X } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // تحميل المحرر على العميل فقط (ssr: false)
@@ -96,6 +97,77 @@ function PlaygroundApp() {
   const [isSavedDrawerOpen, setIsSavedDrawerOpen] = useState(false);
   const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [templateNotification, setTemplateNotification] = useState<string | null>(null);
+
+  // استيراد القالب التلقائي من صفحة /templates مع الحفاظ الآمن على النص الحالي
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkAndImportTemplate = () => {
+      try {
+        const raw = localStorage.getItem('midaddExternalTemplate');
+        if (!raw) return;
+
+        const parsed = JSON.parse(raw) as {
+          markdown?: string;
+          title?: string;
+        };
+
+        if (!parsed || typeof parsed.markdown !== 'string') return;
+
+        // إزالة القالب فوراً لتجنب المعالجة المكررة
+        localStorage.removeItem('midaddExternalTemplate');
+
+        const newMd = parsed.markdown;
+        const newTitle = parsed.title || 'Untitled Document';
+
+        let wasBackupSaved = false;
+
+        setMarkdown(prevMd => {
+          // إذا كان لدى المستخدم محتوى سابق غير فارغ ومختلف عن القالب، نحفظه في المستندات المحفوظة
+          if (prevMd && prevMd.trim().length > 0 && prevMd.trim() !== newMd.trim()) {
+            try {
+              const html = markdownToHtml(prevMd);
+              saveDocument(
+                documentTitle || 'Draft Document',
+                prevMd,
+                html,
+                currentDocId
+              );
+              wasBackupSaved = true;
+            } catch (err) {
+              console.warn('Failed to auto-backup existing document:', err);
+            }
+          }
+          return newMd;
+        });
+
+        setDocumentTitle(newTitle);
+        setCurrentDocId(undefined);
+        setDocxBase64(undefined);
+
+        const noticeMessage = wasBackupSaved
+          ? `تم استيراد القالب "${newTitle}" بنجاح! تم حفظ مستندك السابق تلقائياً في المستندات المحفوظة.`
+          : `تم استيراد القالب "${newTitle}" بنجاح إلى المحرر!`;
+
+        setTemplateNotification(noticeMessage);
+        setTimeout(() => {
+          setTemplateNotification(null);
+        }, 6000);
+      } catch (err) {
+        console.warn('Failed to import pending template:', err);
+      }
+    };
+
+    checkAndImportTemplate();
+
+    window.addEventListener('focus', checkAndImportTemplate);
+    window.addEventListener('midaddTemplateSelected', checkAndImportTemplate);
+    return () => {
+      window.removeEventListener('focus', checkAndImportTemplate);
+      window.removeEventListener('midaddTemplateSelected', checkAndImportTemplate);
+    };
+  }, [documentTitle, currentDocId]);
 
   // اختصارات لوحة المفاتيح (Ctrl+K / Cmd+K لفتح نافذة الإدراج)
   useEffect(() => {
@@ -253,6 +325,24 @@ function PlaygroundApp() {
         onClearDoc={handleClearDoc}
         isExporting={isExporting}
       />
+
+      {/* Template Import Notification Banner */}
+      {templateNotification && (
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 pt-3 w-full animate-fadeIn">
+          <div className="bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 px-4 py-3 rounded-xl flex items-center justify-between text-xs sm:text-sm font-semibold shadow-2xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>{templateNotification}</span>
+            </div>
+            <button
+              onClick={() => setTemplateNotification(null)}
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-100 p-1 cursor-pointer transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Editor Canvas */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4">

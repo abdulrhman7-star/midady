@@ -9,7 +9,6 @@ import React, {
   useCallback,
 } from 'react';
 import dynamic from 'next/dynamic';
-import { blankDocumentBytes, runChromePrint } from '@docx-editor.dev/core';
 import '@docx-editor.dev/core/styles/editor.css';
 import { Loader2 } from 'lucide-react';
 
@@ -34,7 +33,23 @@ export interface EigenDocxEditorProps {
 // evaluated on the server. Combined with the outer `dynamic(..., { ssr: false })`
 // in Editor.tsx, no DOCX-Editor code ever runs during SSR / prerendering.
 const DynamicDocxEditor = dynamic(
-  () => import('@docx-editor.dev/react').then(mod => mod.DocxEditor),
+  () =>
+    import('@docx-editor.dev/react')
+      .then(mod => mod.DocxEditor)
+      .catch(err => {
+        console.warn('ChunkLoadError or dynamic import error loading DocxEditor, retrying...', err);
+        return new Promise<any>(resolve => {
+          setTimeout(() => {
+            import('@docx-editor.dev/react')
+              .then(mod => resolve(mod.DocxEditor))
+              .catch(() => {
+                if (typeof window !== 'undefined') {
+                  window.location.reload();
+                }
+              });
+          }, 800);
+        });
+      }),
   {
     ssr: false,
     loading: () => (
@@ -44,7 +59,7 @@ const DynamicDocxEditor = dynamic(
       </div>
     ),
   }
-);
+) as any;
 
 export const EigenDocxEditor = forwardRef<EigenDocxEditorHandle, EigenDocxEditorProps>(
   (
@@ -61,12 +76,7 @@ export const EigenDocxEditor = forwardRef<EigenDocxEditorHandle, EigenDocxEditor
     const editorComponentRef = useRef<any>(null);
     const editorInstanceRef = useRef<any>(null);
     const [currentSource, setCurrentSource] = useState<Uint8Array | ArrayBuffer | 'blank'>(() => {
-      if (initialBytes) return initialBytes;
-      try {
-        return blankDocumentBytes();
-      } catch {
-        return 'blank';
-      }
+      return initialBytes || 'blank';
     });
     const [isEngineReady, setIsEngineReady] = useState(false);
 
@@ -123,10 +133,13 @@ export const EigenDocxEditor = forwardRef<EigenDocxEditorHandle, EigenDocxEditor
         },
         printDocument: async () => {
           const raw = editorInstanceRef.current || editorComponentRef.current?.getEditor?.();
-          if (raw && typeof runChromePrint === 'function') {
+          if (raw) {
             try {
-              await runChromePrint(raw);
-              return;
+              const { runChromePrint } = await import('@docx-editor.dev/core');
+              if (typeof runChromePrint === 'function') {
+                await runChromePrint(raw);
+                return;
+              }
             } catch (err) {
               console.warn('runChromePrint failed, falling back to window.print():', err);
             }

@@ -640,6 +640,9 @@ export default function TemplatesPage() {
           source: 'templates_page',
         })
       );
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('midaddTemplateSelected'));
+      }
     } catch {}
 
     router.push('/');
