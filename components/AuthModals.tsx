@@ -23,7 +23,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onRegister,
   isOutOfCredits = false,
 }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const isAr = language === 'ar';
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -57,7 +58,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {isOutOfCredits ? t.outOfCreditsTitle : t.convertAccount}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                +20 Free Credits upon account creation
+                {isAr ? '+20 رصيد مجاني عند إنشاء الحساب' : '+20 Free Credits upon account creation'}
               </p>
             </div>
           </div>
@@ -80,9 +81,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {isSuccess ? (
             <div className="py-8 text-center space-y-2">
               <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto animate-bounce" />
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">Account Created!</h4>
+              <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                {isAr ? 'تم إنشاء الحساب بنجاح!' : 'Account Created!'}
+              </h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                20 export credits have been added to your account.
+                {isAr ? 'تمت إضافة 20 نقطة تصدير إلى حسابك.' : '20 export credits have been added to your account.'}
               </p>
             </div>
           ) : (
@@ -96,7 +99,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   required
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  placeholder="e.g. Abdulrahman"
+                  placeholder={isAr ? 'عبدالرحمن محمد' : 'e.g. Abdulrahman'}
                   className="w-full px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
@@ -132,7 +135,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full inline-flex items-center justify-center space-x-2 rtl:space-x-reverse py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-600/20 transition"
+                  className="w-full inline-flex items-center justify-center space-x-2 rtl:space-x-reverse py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-600/20 transition cursor-pointer"
                 >
                   <Sparkles className="h-4 w-4" />
                   <span>{t.createAccountBtn}</span>
@@ -141,7 +144,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="flex items-center justify-center space-x-1.5 rtl:space-x-reverse text-xs text-slate-400 pt-1">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                <span>Guest documents and history will be automatically merged.</span>
+                <span>
+                  {isAr ? 'سيتم دمج مستندات الزائر وسجله تلقائياً مع حسابك.' : 'Guest documents and history will be automatically merged.'}
+                </span>
               </div>
             </form>
           )}

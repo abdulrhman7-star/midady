@@ -1,7 +1,6 @@
-'use client';
-
 import React, { useState } from 'react';
 import { X, Search, Replace, Check, AlertCircle } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 interface FindReplaceModalProps {
   isOpen: boolean;
@@ -16,6 +15,9 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
   markdown,
   onReplaceMarkdown,
 }) => {
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
+
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [matchCase, setMatchCase] = useState(false);
@@ -43,10 +45,10 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
     if (regex.test(markdown)) {
       const updated = markdown.replace(regex, replaceText);
       onReplaceMarkdown(updated);
-      setMessage('Replaced 1 occurrence.');
+      setMessage(isAr ? 'تم استبدال النتيجة الأولى.' : 'Replaced 1 occurrence.');
       setTimeout(() => setMessage(null), 2500);
     } else {
-      setMessage('No match found.');
+      setMessage(isAr ? 'لم يتم العثور على مطابقة.' : 'No match found.');
       setTimeout(() => setMessage(null), 2500);
     }
   };
@@ -61,10 +63,10 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
     if (count > 0) {
       const updated = markdown.replace(regex, replaceText);
       onReplaceMarkdown(updated);
-      setMessage(`Replaced ${count} occurrence(s).`);
+      setMessage(isAr ? `تم استبدال ${count} نتيجة.` : `Replaced ${count} occurrence(s).`);
       setTimeout(() => setMessage(null), 2500);
     } else {
-      setMessage('No matches found to replace.');
+      setMessage(isAr ? 'لا توجد نتائج للاستبدال.' : 'No matches found to replace.');
       setTimeout(() => setMessage(null), 2500);
     }
   };
@@ -76,7 +78,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <Replace className="h-5 w-5 text-blue-600" />
             <h3 className="font-bold text-slate-900 dark:text-white text-base">
-              Find & Replace
+              {isAr ? 'البحث والاستبدال' : 'Find & Replace'}
             </h3>
           </div>
           <button
@@ -90,20 +92,20 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
         {/* Find input */}
         <div className="space-y-1">
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Find Text
+            {isAr ? 'النص المراد البحث عنه' : 'Find Text'}
           </label>
           <div className="relative">
             <input
               type="text"
               value={findText}
               onChange={e => setFindText(e.target.value)}
-              placeholder="Text to find..."
-              className="w-full pl-9 pr-16 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={isAr ? 'اكتب النص للبحث...' : 'Text to find...'}
+              className="w-full pl-9 rtl:pl-3 rtl:pr-9 pr-16 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <Search className="h-4 w-4 text-slate-400 absolute left-3 top-2.5" />
+            <Search className="h-4 w-4 text-slate-400 absolute left-3 rtl:left-auto rtl:right-3 top-2.5" />
             {findText && (
-              <span className="absolute right-3 top-2.5 text-[11px] font-semibold text-slate-500">
-                {matchesCount} found
+              <span className="absolute right-3 rtl:right-auto rtl:left-3 top-2.5 text-[11px] font-semibold text-slate-500">
+                {matchesCount} {isAr ? 'نتيجة' : 'found'}
               </span>
             )}
           </div>
@@ -112,13 +114,13 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
         {/* Replace input */}
         <div className="space-y-1">
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Replace With
+            {isAr ? 'النص البديل' : 'Replace With'}
           </label>
           <input
             type="text"
             value={replaceText}
             onChange={e => setReplaceText(e.target.value)}
-            placeholder="New replacement text..."
+            placeholder={isAr ? 'النص الجديد...' : 'New replacement text...'}
             className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -130,10 +132,10 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
             id="matchCase"
             checked={matchCase}
             onChange={e => setMatchCase(e.target.checked)}
-            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
           />
           <label htmlFor="matchCase" className="text-slate-700 dark:text-slate-300 cursor-pointer">
-            Match case (case sensitive)
+            {isAr ? 'مطابقة حالة الأحرف (حساس لأحرف اللغة الإنجليزية)' : 'Match case (case sensitive)'}
           </label>
         </div>
 
@@ -150,28 +152,29 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
-            Cancel
+            {isAr ? 'إلغاء' : 'Cancel'}
           </button>
           <button
             type="button"
             onClick={handleReplaceFirst}
             disabled={!findText || matchesCount === 0}
-            className="px-3.5 py-2 rounded-lg border border-blue-600 text-blue-600 dark:text-blue-400 text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-950/40 disabled:opacity-40"
+            className="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
           >
-            Replace
+            {isAr ? 'استبدال التالي' : 'Replace Next'}
           </button>
           <button
             type="button"
             onClick={handleReplaceAll}
             disabled={!findText || matchesCount === 0}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm disabled:opacity-40"
+            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm disabled:opacity-40 cursor-pointer"
           >
-            Replace All ({matchesCount})
+            {isAr ? `استبدال الكل (${matchesCount})` : `Replace All (${matchesCount})`}
           </button>
         </div>
       </div>
     </div>
   );
 };
+

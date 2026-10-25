@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import dynamic from 'next/dynamic';
 import { LanguageProvider, useLanguage } from '@/components/LanguageContext';
@@ -194,6 +194,10 @@ function PlaygroundApp() {
     }
   };
 
+  const editorRef = useRef<any>(null);
+
+  // ... (rest of the component state and logic)
+
   // تصدير DOCX مع فحص الأرصدة
   const handleExportDocx = async () => {
     if (session.credits <= 0) {
@@ -201,6 +205,19 @@ function PlaygroundApp() {
       return;
     }
 
+    if (editorRef.current?.exportDocument) {
+      setIsExporting(true);
+      try {
+        await editorRef.current.exportDocument();
+      } catch (err) {
+        console.error('Error exporting DOCX:', err);
+      } finally {
+        setIsExporting(false);
+      }
+      return;
+    }
+
+    // Fallback
     setIsExporting(true);
     try {
       const filename = `${documentTitle.replace(
@@ -224,6 +241,7 @@ function PlaygroundApp() {
       setIsExporting(false);
     }
   };
+
 
   // تصدير PDF عبر الطباعة
   const handleExportPdf = () => {
@@ -347,6 +365,7 @@ function PlaygroundApp() {
       {/* Editor Canvas */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4">
         <Editor
+          ref={editorRef}
           markdown={markdown}
           onChangeMarkdown={setMarkdown}
           documentTitle={documentTitle}

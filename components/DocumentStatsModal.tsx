@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { X, FileText, Type, AlignLeft, Clock, Mic, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
@@ -17,7 +15,8 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
   markdown,
   documentTitle,
 }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const isAr = language === 'ar';
 
   if (!isOpen) return null;
 
@@ -47,7 +46,7 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Word Count & Statistics
+                {isAr ? 'إحصائيات الكلمات والمستند' : 'Word Count & Statistics'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[240px]">
                 {documentTitle}
@@ -65,7 +64,9 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
         {/* Primary Statistics Grid */}
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
-            <span className="text-xs text-slate-500 dark:text-slate-400 block mb-0.5">Words</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 block mb-0.5">
+              {isAr ? 'الكلمات' : 'Words'}
+            </span>
             <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               {words.toLocaleString()}
             </span>
@@ -73,7 +74,7 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
             <span className="text-xs text-slate-500 dark:text-slate-400 block mb-0.5">
-              Characters (with spaces)
+              {isAr ? 'الحروف (مع المسافات)' : 'Characters (with spaces)'}
             </span>
             <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               {charactersWithSpaces.toLocaleString()}
@@ -82,7 +83,7 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
             <span className="text-xs text-slate-500 dark:text-slate-400 block mb-0.5">
-              Characters (no spaces)
+              {isAr ? 'الحروف (بدون مسافات)' : 'Characters (no spaces)'}
             </span>
             <span className="text-lg font-bold text-slate-900 dark:text-white">
               {charactersNoSpaces.toLocaleString()}
@@ -91,7 +92,7 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
             <span className="text-xs text-slate-500 dark:text-slate-400 block mb-0.5">
-              Paragraphs
+              {isAr ? 'الفقرات' : 'Paragraphs'}
             </span>
             <span className="text-lg font-bold text-slate-900 dark:text-white">
               {paragraphs.toLocaleString()}
@@ -100,7 +101,7 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
             <span className="text-xs text-slate-500 dark:text-slate-400 block mb-0.5">
-              Sentences
+              {isAr ? 'الجمل' : 'Sentences'}
             </span>
             <span className="text-lg font-bold text-slate-900 dark:text-white">
               {sentences.toLocaleString()}
@@ -109,7 +110,7 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
 
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
             <span className="text-xs text-slate-500 dark:text-slate-400 block mb-0.5">
-              Total Lines
+              {isAr ? 'إجمالي الأسطر' : 'Total Lines'}
             </span>
             <span className="text-lg font-bold text-slate-900 dark:text-white">
               {lines.toLocaleString()}
@@ -122,34 +123,35 @@ export const DocumentStatsModal: React.FC<DocumentStatsModalProps> = ({
           <div className="flex items-center space-x-2 rtl:space-x-reverse text-blue-900 dark:text-blue-200">
             <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <span>
-              Reading Time: <strong>~{readingMinutes} min</strong>
+              {isAr ? 'وقت القراءة:' : 'Reading Time:'} <strong>~{readingMinutes} {isAr ? 'دقيقة' : 'min'}</strong>
             </span>
           </div>
           <div className="h-4 w-px bg-blue-200 dark:bg-blue-800" />
           <div className="flex items-center space-x-2 rtl:space-x-reverse text-blue-900 dark:text-blue-200">
             <Mic className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <span>
-              Speaking Time: <strong>~{speakingMinutes} min</strong>
+              {isAr ? 'وقت الإلقاء:' : 'Speaking Time:'} <strong>~{speakingMinutes} {isAr ? 'دقيقة' : 'min'}</strong>
             </span>
           </div>
         </div>
 
         {/* Embedded Rich Content Counter */}
         <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-          <span>Formulae / Math: <strong>{mathMatches}</strong></span>
-          <span>Code Blocks: <strong>{codeMatches}</strong></span>
-          <span>Structured Tables: <strong>{tableMatches > 0 ? 'Yes' : 'None'}</strong></span>
+          <span>{isAr ? 'المعادلات:' : 'Math:'} <strong>{mathMatches}</strong></span>
+          <span>{isAr ? 'الأكواد:' : 'Code:'} <strong>{codeMatches}</strong></span>
+          <span>{isAr ? 'الجداول:' : 'Tables:'} <strong>{tableMatches > 0 ? (isAr ? 'نعم' : 'Yes') : (isAr ? 'لا توجد' : 'None')}</strong></span>
         </div>
 
         <div className="flex justify-end pt-1">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:bg-slate-800 transition"
+            className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
           >
-            Close
+            {isAr ? 'إغلاق' : 'Close'}
           </button>
         </div>
       </div>
     </div>
   );
 };
+

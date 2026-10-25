@@ -215,7 +215,7 @@ export const InsertContentModal: React.FC<InsertContentModalProps> = ({
                   <span>
                     {rawText.trim().split(/\s+/).length} {t.wordCount} | {rawText.length} {t.charCount}
                   </span>
-                  <span>Press Ctrl+Enter to insert</span>
+                  <span>{language === 'ar' ? 'اضغط Ctrl+Enter للإدراج' : 'Press Ctrl+Enter to insert'}</span>
                 </div>
               )}
             </div>
@@ -261,11 +261,13 @@ export const InsertContentModal: React.FC<InsertContentModalProps> = ({
               </div>
 
               <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                <p className="font-semibold text-slate-700 dark:text-slate-300">Supported formats:</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-300">
+                  {language === 'ar' ? 'الصيغ المدعومة:' : 'Supported formats:'}
+                </p>
                 <ul className="list-disc pl-5 rtl:pr-5 space-y-0.5">
                   <li>ChatGPT: <code className="text-red-600">https://chatgpt.com/share/67...</code></li>
                   <li>Gemini: <code className="text-red-600">https://gemini.google.com/share/...</code></li>
-                  <li>Claude or other public conversation links</li>
+                  <li>{language === 'ar' ? 'روابط المحادثات العامة الأخرى' : 'Claude or other public conversation links'}</li>
                 </ul>
               </div>
             </div>
@@ -305,7 +307,7 @@ export const InsertContentModal: React.FC<InsertContentModalProps> = ({
                 disabled={!rawText.trim()}
                 className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs sm:text-sm font-semibold transition"
               >
-                {t.replaceAction} (إلحاق/تعديل)
+                {t.replaceAction}
               </button>
             </div>
           )}

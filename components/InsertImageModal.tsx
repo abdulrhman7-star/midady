@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Image as ImageIcon, Upload, Link, Check } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 interface InsertImageModalProps {
   isOpen: boolean;
@@ -14,9 +15,12 @@ export const InsertImageModal: React.FC<InsertImageModalProps> = ({
   onClose,
   onInsertImage,
 }) => {
+  const { language } = useLanguage();
+  const isAr = language === 'ar';
+
   const [tab, setTab] = useState<'upload' | 'url'>('upload');
   const [imageUrl, setImageUrl] = useState('');
-  const [altText, setAltText] = useState('Figure 1');
+  const [altText, setAltText] = useState(isAr ? 'شكل 1' : 'Figure 1');
   const [caption, setCaption] = useState('');
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
@@ -58,7 +62,7 @@ export const InsertImageModal: React.FC<InsertImageModalProps> = ({
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <ImageIcon className="h-5 w-5 text-emerald-600" />
             <h3 className="font-bold text-slate-900 dark:text-white text-base">
-              Insert Picture / Image
+              {isAr ? 'إدراج صورة / توضيح' : 'Insert Picture / Image'}
             </h3>
           </div>
           <button
@@ -73,30 +77,30 @@ export const InsertImageModal: React.FC<InsertImageModalProps> = ({
         <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-semibold">
           <button
             onClick={() => setTab('upload')}
-            className={`flex-1 py-1.5 rounded-md text-center transition ${
+            className={`flex-1 py-1.5 rounded-md text-center transition cursor-pointer ${
               tab === 'upload'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400'
             }`}
           >
-            Upload Computer Image
+            {isAr ? 'رفع من الجهاز' : 'Upload Computer Image'}
           </button>
           <button
             onClick={() => setTab('url')}
-            className={`flex-1 py-1.5 rounded-md text-center transition ${
+            className={`flex-1 py-1.5 rounded-md text-center transition cursor-pointer ${
               tab === 'url'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400'
             }`}
           >
-            Image Web URL
+            {isAr ? 'رابط صورة ويب' : 'Image Web URL'}
           </button>
         </div>
 
         {tab === 'upload' ? (
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Select Image File
+              {isAr ? 'اختر ملف الصورة' : 'Select Image File'}
             </label>
             <input
               type="file"
@@ -108,7 +112,7 @@ export const InsertImageModal: React.FC<InsertImageModalProps> = ({
         ) : (
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Image URL
+              {isAr ? 'رابط الصورة' : 'Image URL'}
             </label>
             <input
               type="url"
@@ -135,25 +139,25 @@ export const InsertImageModal: React.FC<InsertImageModalProps> = ({
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Alt Text
+              {isAr ? 'النص البديل (Alt)' : 'Alt Text'}
             </label>
             <input
               type="text"
               value={altText}
               onChange={e => setAltText(e.target.value)}
-              placeholder="Figure description"
+              placeholder={isAr ? 'وصف الصورة' : 'Figure description'}
               className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950"
             />
           </div>
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Caption (Optional)
+              {isAr ? 'تعليق توضيحي (اختياري)' : 'Caption (Optional)'}
             </label>
             <input
               type="text"
               value={caption}
               onChange={e => setCaption(e.target.value)}
-              placeholder="e.g. Figure 1: Architecture diagram"
+              placeholder={isAr ? 'شكل 1: معمارية النظام' : 'e.g. Figure 1: Architecture diagram'}
               className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950"
             />
           </div>
@@ -163,20 +167,21 @@ export const InsertImageModal: React.FC<InsertImageModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold"
+            className="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
           >
-            Cancel
+            {isAr ? 'إلغاء' : 'Cancel'}
           </button>
           <button
             type="button"
             onClick={handleInsert}
             disabled={!previewSrc && !imageUrl}
-            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm disabled:opacity-40"
+            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm disabled:opacity-40 cursor-pointer"
           >
-            Insert Image
+            {isAr ? 'إدراج الصورة' : 'Insert Image'}
           </button>
         </div>
       </div>
     </div>
   );
 };
+

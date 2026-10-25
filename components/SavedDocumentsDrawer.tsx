@@ -33,7 +33,7 @@ export const SavedDocumentsDrawer: React.FC<SavedDocumentsDrawerProps> = ({
   onExportDocx,
   onNewDoc,
 }) => {
-  const { direction, t } = useLanguage();
+  const { direction, language, t } = useLanguage();
 
   if (!isOpen) return null;
 
@@ -79,7 +79,7 @@ export const SavedDocumentsDrawer: React.FC<SavedDocumentsDrawerProps> = ({
               className="w-full py-2 px-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 hover:border-red-500 hover:bg-red-50/40 dark:hover:bg-red-950/20 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-semibold flex items-center justify-center space-x-2 rtl:space-x-reverse transition"
             >
               <Plus className="h-4 w-4 text-red-600" />
-              <span>Create Blank Document</span>
+              <span>{language === 'ar' ? 'إنشاء مستند فارغ' : 'Create Blank Document'}</span>
             </button>
           </div>
 
@@ -120,7 +120,7 @@ export const SavedDocumentsDrawer: React.FC<SavedDocumentsDrawerProps> = ({
                       <button
                         onClick={() => onDeleteDoc(doc.id)}
                         className="p-1 text-slate-400 hover:text-red-600 rounded transition opacity-75 hover:opacity-100"
-                        title="Delete Document"
+                        title={language === 'ar' ? 'حذف المستند' : 'Delete Document'}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -148,7 +148,7 @@ export const SavedDocumentsDrawer: React.FC<SavedDocumentsDrawerProps> = ({
                         }}
                         className="flex-1 py-1 px-2.5 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition"
                       >
-                        Open Editor
+                        {language === 'ar' ? 'فتح في المحرر' : 'Open Editor'}
                       </button>
                       <button
                         onClick={() => {
@@ -163,7 +163,7 @@ export const SavedDocumentsDrawer: React.FC<SavedDocumentsDrawerProps> = ({
                           onExportDocx(doc.markdown, doc.title);
                         }}
                         className="p-1.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition cursor-pointer"
-                        title="Quick Download DOCX"
+                        title={language === 'ar' ? 'تنزيل DOCX سريع' : 'Quick Download DOCX'}
                       >
                         <FileDown className="h-3.5 w-3.5" />
                       </button>

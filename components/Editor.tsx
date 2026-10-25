@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useLanguage } from './LanguageContext';
@@ -69,6 +69,10 @@ const EigenDocxEditor = dynamic(
   }
 ) as typeof import('./EigenDocxEditor').EigenDocxEditor;
 
+export interface EditorHandle {
+  exportDocument: () => Promise<void>;
+}
+
 interface EditorProps {
   markdown: string;
   onChangeMarkdown: (markdown: string) => void;
@@ -85,21 +89,22 @@ interface EditorProps {
   docxBase64?: string;
 }
 
-export const Editor: React.FC<EditorProps> = ({
-  markdown,
-  onChangeMarkdown,
-  documentTitle,
-  onChangeTitle,
-  onOpenInsertModal,
-  onExportDocx = () => {},
-  onExportPdf = () => {},
-  onCopyGoogleDocs = () => {},
-  onSaveDoc = () => {},
-  onClearDoc = () => {},
-  isExporting = false,
-  currentDocId,
-  docxBase64,
-}) => {
+export const Editor = forwardRef<EditorHandle, EditorProps>((props, ref) => {
+  const {
+    markdown,
+    onChangeMarkdown,
+    documentTitle,
+    onChangeTitle,
+    onOpenInsertModal,
+    onExportDocx = () => {},
+    onExportPdf = () => {},
+    onCopyGoogleDocs = () => {},
+    onSaveDoc = () => {},
+    onClearDoc = () => {},
+    isExporting = false,
+    currentDocId,
+    docxBase64,
+  } = props;
   const { direction, t } = useLanguage();
   const session = useSession();
   const [isDark] = useTheme();
@@ -124,6 +129,13 @@ export const Editor: React.FC<EditorProps> = ({
 
   // EigenPal DOCX Engine references and bytes
   const eigenEditorRef = useRef<EigenDocxEditorHandle>(null);
+  
+  useImperativeHandle(ref, () => ({
+    exportDocument: handleDownloadRealDocx,
+  }));
+
+
+
   const lastPackedMarkdownRef = useRef<string>(markdown);
   const [docxBytes, setDocxBytes] = useState<Uint8Array | null>(null);
   const [isInitializingDocx, setIsInitializingDocx] = useState(false);
@@ -325,7 +337,7 @@ export const Editor: React.FC<EditorProps> = ({
   }, [handleManualSave]);
 
   // Download real DOCX binary file from EigenPal editor
-  const handleDownloadRealDocx = async () => {
+  const handleDownloadRealDocx = useCallback(async () => {
     if (session.credits <= 0) {
       onExportDocx();
       return;
@@ -353,7 +365,8 @@ export const Editor: React.FC<EditorProps> = ({
       console.warn('Real DOCX buffer save failed, falling back to generator:', e);
       onExportDocx();
     }
-  };
+  }, [documentTitle, onExportDocx, session.credits]);
+
 
   // Export PDF via genuine print pipeline
   const handlePrintDocx = async () => {
@@ -1401,7 +1414,9 @@ export const Editor: React.FC<EditorProps> = ({
       )}
     </div>
   );
-};
+});
+
+Editor.displayName = 'Editor';
 
 function linesCount(str: string): number {
   return str.split('\n').length;

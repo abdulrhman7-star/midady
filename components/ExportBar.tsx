@@ -88,11 +88,16 @@ export const ExportBar: React.FC<ExportBarProps> = ({
             title="Download formatted Microsoft Word document (.docx) with editable native math equations"
           >
             {isExporting ? (
-              <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-white shrink-0" />
+              <>
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-white shrink-0" />
+                <span className="font-bold tracking-tight whitespace-nowrap">Exporting...</span>
+              </>
             ) : (
-              <FileDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white group-hover:-translate-y-0.5 transition-transform duration-150 shrink-0" />
+              <>
+                <FileDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white group-hover:-translate-y-0.5 transition-transform duration-150 shrink-0" />
+                <span className="font-bold tracking-tight whitespace-nowrap">{t.exportDocx}</span>
+              </>
             )}
-            <span className="font-bold tracking-tight whitespace-nowrap">{t.exportDocx}</span>
             <span className="hidden xs:inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-blue-900/40 text-blue-100 border border-blue-400/30">
               DOCX
             </span>

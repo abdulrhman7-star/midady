@@ -135,7 +135,7 @@ export const WordRibbon: React.FC<WordRibbonProps> = ({
   onInsertTableOfContents,
   isExporting,
 }) => {
-  const { direction, t } = useLanguage();
+  const { direction, language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<RibbonTab>('home');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
