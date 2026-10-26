@@ -154,7 +154,7 @@ export const SavedDocumentsDrawer: React.FC<SavedDocumentsDrawerProps> = ({
                         onClick={() => {
                           if (doc.docxBase64) {
                             try {
-                              const { base64ToBuffer } = require('@/lib/supabase');
+                              const { base64ToBuffer } = require('@/lib/utils');
                               const { downloadDocxBuffer } = require('@/lib/docx-export');
                               downloadDocxBuffer(base64ToBuffer(doc.docxBase64), `${doc.title}.docx`);
                               return;

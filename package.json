@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
-    "build": "NODE_ENV=production next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "clean": "next clean"
@@ -16,7 +16,6 @@
     "@docx-editor.dev/react": "^2.29.0",
     "@google/genai": "^2.4.0",
     "@hookform/resolvers": "^5.2.1",
-    "@supabase/supabase-js": "^2.117.3",
     "@types/canvas-confetti": "^1.9.0",
     "@types/katex": "^0.16.8",
     "anynum": "^1.0.1",
@@ -25,6 +24,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "docx": "^9.7.1",
+    "firebase": "^13.1.0",
     "katex": "^0.18.7",
     "lucide-react": "^0.553.0",
     "mammoth": "^1.13.0",
@@ -36,6 +36,7 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@firebase/eslint-plugin-security-rules": "^0.0.2",
     "@tailwindcss/postcss": "4.1.11",
     "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^20",

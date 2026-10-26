@@ -25,6 +25,14 @@ import { useTheme } from '@/lib/theme';
 import { markdownToHtml } from '@/lib/markdown-to-html';
 import { SavedDocument } from '@/types';
 import { Sparkles, X } from 'lucide-react';
+import {
+  auth,
+  signOut as firebaseSignOut,
+  fetchUserDocuments,
+  saveUserDocument as saveFirebaseDoc,
+  deleteUserDocument as deleteFirebaseDoc,
+} from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // ---------------------------------------------------------------------------
 // تحميل المحرر على العميل فقط (ssr: false)
@@ -98,6 +106,18 @@ function PlaygroundApp() {
   const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [templateNotification, setTemplateNotification] = useState<string | null>(null);
+
+  // Sync Firebase Auth state with local session
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (user) {
+        const name = user.displayName || user.email?.split('@')[0] || 'User';
+        convertGuestToFullAccount(user.email || '', name);
+        fetchUserDocuments(user.uid);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // استيراد القالب التلقائي من صفحة /templates مع الحفاظ الآمن على النص الحالي
   useEffect(() => {
@@ -260,9 +280,16 @@ function PlaygroundApp() {
   };
 
   // حفظ المستند الحالي
-  const handleSaveDoc = () => {
+  const handleSaveDoc = async () => {
     const html = markdownToHtml(markdown);
-    const saved = saveDocument(documentTitle, markdown, html, currentDocId);
+    const saved = await saveFirebaseDoc({
+      id: currentDocId,
+      title: documentTitle,
+      markdown,
+      html,
+      docxBase64,
+      userId: session.id,
+    });
     setCurrentDocId(saved.id);
   };
 
@@ -285,9 +312,9 @@ function PlaygroundApp() {
   };
 
   // حذف مستند محفوظ
-  const handleDeleteSavedDoc = (id: string) => {
+  const handleDeleteSavedDoc = async (id: string) => {
     if (window.confirm(t.deleteConfirm)) {
-      deleteDocument(id);
+      await deleteFirebaseDoc(id, session.id);
       if (currentDocId === id) {
         setCurrentDocId(undefined);
         setDocxBase64(undefined);
@@ -316,7 +343,10 @@ function PlaygroundApp() {
   };
 
   // تسجيل الخروج
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await firebaseSignOut();
+    } catch {}
     logoutAccount();
   };
 

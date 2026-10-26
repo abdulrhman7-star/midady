@@ -8,16 +8,17 @@ import { Footer } from '@/components/Footer';
 import { useLanguage } from '@/components/LanguageContext';
 import { useSession, useSavedDocsList, logoutAccount, convertGuestToFullAccount } from '@/lib/guest-session';
 import { useTheme } from '@/lib/theme';
+import { signInWithEmail, signInWithGoogle } from '@/lib/firebase';
 import {
   Lock,
   Mail,
   Eye,
   EyeOff,
-  ArrowRight,
   Sparkles,
   ShieldCheck,
   Check,
   AlertCircle,
+  Loader2,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -28,7 +29,6 @@ export default function LoginPage() {
   const [isDark, toggleTheme] = useTheme();
   const isAr = language === 'ar';
 
-  const [provider, setProvider] = useState<'supabase' | 'firebase'>('supabase');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -37,26 +37,66 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const getFriendlyAuthError = (code: string): string => {
+    switch (code) {
+      case 'auth/invalid-credential':
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+        return isAr
+          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
+          : 'Invalid email or password.';
+      case 'auth/invalid-email':
+        return isAr
+          ? 'صيغة البريد الإلكتروني غير صالحة.'
+          : 'Invalid email address format.';
+      case 'auth/user-disabled':
+        return isAr
+          ? 'تم تعطيل هذا الحساب. يرجى التواصل مع الدعم.'
+          : 'This user account has been disabled.';
+      case 'auth/too-many-requests':
+        return isAr
+          ? 'محاولات دخول كثيرة خاطئة. يرجى المحاولة لاحقاً.'
+          : 'Too many unsuccessful attempts. Please try again later.';
+      case 'auth/popup-closed-by-user':
+        return isAr
+          ? 'تم إغلاق نافذة تسجيل الدخول قبل الاكتمال.'
+          : 'Google sign-in popup was closed before completion.';
+      case 'auth/cancelled-popup-request':
+        return isAr ? 'تم إلغاء الطلب.' : 'Sign-in operation cancelled.';
+      case 'auth/popup-blocked':
+        return isAr
+          ? 'تم حظر النافذة المنبثقة من قبل المتصفح.'
+          : 'Popup was blocked by the browser. Please allow popups.';
+      default:
+        return isAr
+          ? 'تعذر تسجيل الدخول. يرجى التحقق من بياناتك والمحاولة مجدداً.'
+          : 'Failed to sign in. Please check your credentials and try again.';
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setSuccessMsg(null);
 
-    if (!email || !password) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
       setErrorMsg(isAr ? 'الرجاء إدخال البريد الإلكتروني وكلمة المرور.' : 'Please enter email and password.');
       return;
     }
 
-    if (!email.includes('@')) {
+    if (!cleanEmail.includes('@')) {
       setErrorMsg(isAr ? 'صيغة البريد الإلكتروني غير صحيحة.' : 'Invalid email format.');
       return;
     }
 
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
-      const name = email.split('@')[0];
-      convertGuestToFullAccount(email, name);
+    try {
+      const user = await signInWithEmail(cleanEmail, password);
+      const name = user.displayName || user.email?.split('@')[0] || cleanEmail.split('@')[0];
+      convertGuestToFullAccount(user.email || cleanEmail, name);
+
       setSuccessMsg(
         isAr
           ? '✅ تم تسجيل الدخول بنجاح! جارٍ تحويلك إلى المحرر...'
@@ -65,24 +105,42 @@ export default function LoginPage() {
 
       setTimeout(() => {
         router.push('/');
-      }, 900);
-    }, 600);
+      }, 700);
+    } catch (err: any) {
+      console.error('Firebase sign in error:', err);
+      const code = err?.code || '';
+      setErrorMsg(getFriendlyAuthError(code));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      convertGuestToFullAccount('user.google@gmail.com', 'Google User');
+
+    try {
+      const user = await signInWithGoogle();
+      const name = user.displayName || user.email?.split('@')[0] || 'Google User';
+      convertGuestToFullAccount(user.email || 'user@gmail.com', name);
+
       setSuccessMsg(
         isAr
-          ? '✅ تم تسجيل الدخول بحساب Google بنجاح!'
-          : '✅ Signed in with Google successfully!'
+          ? '✅ تم تسجيل الدخول بحساب Google بنجاح! جارٍ التحويل...'
+          : '✅ Signed in with Google successfully! Redirecting...'
       );
+
       setTimeout(() => {
         router.push('/');
-      }, 800);
-    }, 700);
+      }, 700);
+    } catch (err: any) {
+      console.error('Google sign in error:', err);
+      const code = err?.code || '';
+      setErrorMsg(getFriendlyAuthError(code));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -107,7 +165,7 @@ export default function LoginPage() {
               {isAr ? 'تسجيل الدخول' : 'Sign In'}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {isAr ? 'مرحبًا بعودتك 👋 أدخل بياناتك للمتابعة.' : 'Welcome back 👋 Enter your credentials.'}
+              {isAr ? 'مرحبًا بعودتك 👋 سجّل الدخول لحفظ ومزامنة مستنداتك بأمان.' : 'Welcome back 👋 Sign in to securely sync your documents.'}
             </p>
           </div>
 
@@ -125,61 +183,30 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Google Sign In (Primary / Fast Option) */}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full py-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold text-xs sm:text-sm flex items-center justify-center gap-3 transition active:scale-95 cursor-pointer disabled:opacity-60 shadow-sm"
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z" />
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.3 26.7 36 24 36c-5.2 0-9.6-3.1-11.3-7.6l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.2 5.2C41.9 34.5 44 29.6 44 24c0-1.3-.1-2.3-.4-3.5z" />
+            </svg>
+            <span>{isAr ? 'المتابعة بحساب Google' : 'Continue with Google'}</span>
+          </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-5 text-xs text-slate-400">
+            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
+            <span>{isAr ? 'أو عبر البريد الإلكتروني' : 'OR WITH EMAIL'}</span>
+            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
+          </div>
+
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* Auth Provider Selector */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                {isAr ? 'نظام المصادقة المفضل' : 'Authentication Provider'}
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <label
-                  className={`flex flex-col p-2.5 rounded-xl border text-xs cursor-pointer transition ${
-                    provider === 'supabase'
-                      ? 'border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 font-bold'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <input
-                      type="radio"
-                      name="provider"
-                      value="supabase"
-                      checked={provider === 'supabase'}
-                      onChange={() => setProvider('supabase')}
-                      className="accent-indigo-600"
-                    />
-                    <span>⚡ Supabase</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    {isAr ? 'الافتراضي والأسرع' : 'Fast & default'}
-                  </span>
-                </label>
-
-                <label
-                  className={`flex flex-col p-2.5 rounded-xl border text-xs cursor-pointer transition ${
-                    provider === 'firebase'
-                      ? 'border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 font-bold'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <input
-                      type="radio"
-                      name="provider"
-                      value="firebase"
-                      checked={provider === 'firebase'}
-                      onChange={() => setProvider('firebase')}
-                      className="accent-indigo-600"
-                    />
-                    <span>🔥 Firebase</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    {isAr ? 'للمستخدمين السابقين' : 'Legacy & Google'}
-                  </span>
-                </label>
-              </div>
-            </div>
-
             {/* Email */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
@@ -192,7 +219,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
@@ -203,12 +230,6 @@ export default function LoginPage() {
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   {isAr ? 'كلمة المرور' : 'Password'}
                 </label>
-                <Link
-                  href="/reset"
-                  className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
-                >
-                  {isAr ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
-                </Link>
               </div>
               <div className="relative">
                 <input
@@ -217,12 +238,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-3.5 py-2.5 pr-10 rtl:pr-3.5 rtl:pl-10 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2.5 pr-10 rtl:pr-3.5 rtl:pl-10 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-1/2 -translate-y-1/2 right-3 rtl:right-auto rtl:left-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute top-1/2 -translate-y-1/2 right-3 rtl:right-auto rtl:left-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -249,7 +270,10 @@ export default function LoginPage() {
               className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer transition active:scale-95 disabled:opacity-50"
             >
               {loading ? (
-                <span>{isAr ? 'جارٍ تسجيل الدخول...' : 'Signing in...'}</span>
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{isAr ? 'جارٍ تسجيل الدخول...' : 'Signing in...'}</span>
+                </>
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
@@ -258,29 +282,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-5 text-xs text-slate-400">
-            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
-            <span>{isAr ? 'أو' : 'OR'}</span>
-            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
-          </div>
-
-          {/* Google Sign In */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition active:scale-95 cursor-pointer"
-          >
-            <svg width="18" height="18" viewBox="0 0 48 48">
-              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z" />
-              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
-              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.3 26.7 36 24 36c-5.2 0-9.6-3.1-11.3-7.6l-6.5 5C9.5 39.6 16.2 44 24 44z" />
-              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.2 5.2C41.9 34.5 44 29.6 44 24c0-1.3-.1-2.3-.4-3.5z" />
-            </svg>
-            <span>{isAr ? 'المتابعة بحساب Google' : 'Continue with Google'}</span>
-          </button>
 
           {/* Links */}
           <div className="mt-6 text-center space-y-2 text-xs">

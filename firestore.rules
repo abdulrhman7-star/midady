@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidUser(data, userId) {
+      return data.id == userId &&
+        data.email is string &&
+        data.email.size() > 0 &&
+        data.email.size() <= 200 &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1000));
+    }
+
+    function isValidDocument(data, userId) {
+      return data.id is string &&
+        data.id.size() > 0 &&
+        data.id.size() <= 128 &&
+        data.userId == userId &&
+        data.title is string &&
+        data.title.size() <= 200 &&
+        data.markdown is string &&
+        data.markdown.size() <= 100000 &&
+        data.html is string &&
+        data.html.size() <= 200000 &&
+        (!('docxBase64' in data) || (data.docxBase64 is string && data.docxBase64.size() <= 800000)) &&
+        (!('isPublic' in data) || data.isPublic is bool);
+    }
+
+    // Connection testing
+    match /test/{testId} {
+      allow get: if isValidId(testId);
+    }
+
+    // User profile matching
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming(), userId) &&
+        incoming().id == userId &&
+        incoming().diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']);
+      allow delete: if false;
+
+      // User document subcollections
+      match /documents/{docId} {
+        allow get: if (isOwner(userId) || (resource.data.isPublic == true)) && isValidId(userId) && isValidId(docId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(docId) &&
+          incoming().id == docId &&
+          isValidDocument(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(docId) &&
+          incoming().id == docId &&
+          incoming().userId == userId &&
+          isValidDocument(incoming(), userId) &&
+          incoming().diff(resource.data).affectedKeys().hasOnly(['title', 'markdown', 'html', 'docxBase64', 'isPublic', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(docId);
+      }
+    }
+  }
+}

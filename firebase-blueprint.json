@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "User account and profile details",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "photoURL": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "email"]
+    },
+    "document": {
+      "title": "Document",
+      "description": "Saved document containing title, markdown, html, and optional docx export payload",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "markdown": {
+          "type": "string",
+          "maxLength": 100000
+        },
+        "html": {
+          "type": "string",
+          "maxLength": 200000
+        },
+        "docxBase64": {
+          "type": "string",
+          "maxLength": 800000
+        },
+        "isPublic": {
+          "type": "boolean"
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "userId", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "User profile records indexed by auth UID"
+    },
+    "/users/{userId}/documents/{docId}": {
+      "schema": "document",
+      "description": "Saved user documents under user subcollection"
+    }
+  }
+}

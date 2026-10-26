@@ -16,8 +16,9 @@ import { InsertLinkModal } from './InsertLinkModal';
 import { SymbolPaletteModal } from './SymbolPaletteModal';
 import { WatermarkModal } from './WatermarkModal';
 import type { EigenDocxEditorHandle } from './EigenDocxEditor';
-import { markdownToDocxBytes, downloadDocxBuffer } from '@/lib/docx-export';
-import { bufferToBase64, base64ToBuffer, saveUserDocument } from '@/lib/supabase';
+import { downloadDocxBuffer } from '@/lib/docx-export';
+import { bufferToBase64, base64ToBuffer } from '@/lib/utils';
+import { saveUserDocument } from '@/lib/firebase';
 import { useSession, deductCredit } from '@/lib/guest-session';
 import { useTheme } from '@/lib/theme';
 import confetti from 'canvas-confetti';
@@ -231,9 +232,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   // Sync internal history with markdown prop if it changes externally
   useEffect(() => {
     if (markdown !== history[historyIndex]) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHistory(prev => [...prev.slice(0, historyIndex + 1), markdown]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHistoryIndex(prev => prev + 1);
     }
   }, [markdown, history, historyIndex]);
